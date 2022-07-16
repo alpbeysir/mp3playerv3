@@ -1,28 +1,21 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using PolyAndCode.UI;
 
-public class SearchManager : Singleton<SearchManager>, IRecyclableScrollRectDataSource
+public class SearchManager : Singleton<SearchManager>
 {
-    [SerializeField] private RecyclableScrollRect scrollRect;
+    [SerializeField] private RecyclingListView listView;
 
-    void Awake()
+    public int maxResults;
+
+    private void Start()
     {
-        scrollRect.DataSource = this;
-    }
-    
-    private int maxResults = 500;
-    public int GetItemCount() => maxResults;
-    
-    public void SetCell(ICell cell, int index)
-    {
-        _ = (cell as VideoInfo).Populate("Nj2U6rhnucI", index);
+        listView.ItemCallback += PopulateDelegate;
+        listView.RowCount = maxResults;
     }
 
-    public void Search()
+    private void PopulateDelegate(RecyclingListViewItem item, int index)
     {
-        //TODO search
-        scrollRect.ReloadData();
-    }
+        _ = (item as VideoInfo).Populate("Nj2U6rhnucI", index);
+    } 
 }

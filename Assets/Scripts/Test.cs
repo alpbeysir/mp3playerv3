@@ -7,12 +7,27 @@ using YoutubeExplode.Search;
 using YoutubeExplode;
 using Cysharp.Threading.Tasks;
 using System.Threading.Tasks;
+using BackgroundAudio;
 
 public class Test : MonoBehaviour
 {
     public void Start()
     {
-        _ = TestFunc();
+        //_ = TestFunc();
+    
+        // Get an instance of the BackgroundAudioImplementation class for the current build platform
+        //var instance = BackgroundAudioManager.NewInstance();
+
+        // To play an mp3 file
+        // NOTE: Network playback currently not supported
+        //instance.Play(Application.persistentDataPath + "/test.mp3");
+
+        // Callbacks
+        // NOTE: Callbacks on Android are not invoked on the main thread (use a main thread dispatcher to update UI)
+        //instance.OnAudioStarted += () => Debug.Log("Audio started playing");
+        //instance.OnAudioStopped += () => Debug.Log("Audio stopped playing");
+        //instance.OnAudioPaused += () => Debug.Log("Audio paused");
+        //instance.OnAudioResumed += () => Debug.Log("Audio resumed");
     }
 
     public async UniTask TestFunc()
@@ -30,5 +45,5 @@ public class Test : MonoBehaviour
         await dl;
         if (dl.IsCompletedSuccessfully) Debug.Log("Download successful!");
     }
-    
+
 }

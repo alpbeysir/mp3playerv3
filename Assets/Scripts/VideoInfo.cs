@@ -5,9 +5,8 @@ using UnityEngine.UI;
 using YoutubeExplode;
 using Cysharp.Threading.Tasks;
 using TMPro;
-using PolyAndCode.UI;
 
-public class VideoInfo : MonoBehaviour, ICell
+public class VideoInfo : RecyclingListViewItem
 {
     [SerializeField] private Image thumbnailDisplay;
     [SerializeField] private TextMeshProUGUI titleDisplay;
