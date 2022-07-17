@@ -11,11 +11,12 @@ using BackgroundAudio;
 
 public class Test : MonoBehaviour
 {
+    private AndroidPlayer player = new AndroidPlayer();
     public void Start()
     {
-        Application.targetFrameRate = 60;
-        
-        //_ = TestFunc();
+        player.Init();
+        player.CurFile = Application.persistentDataPath + "/test.webm";
+        player.Play();
 
         // Get an instance of the BackgroundAudioImplementation class for the current build platform
         //var instance = BackgroundAudioManager.NewInstance();
@@ -32,19 +33,13 @@ public class Test : MonoBehaviour
         //instance.OnAudioResumed += () => Debug.Log("Audio resumed");
     }
 
-    public async UniTask TestFunc()
-    {
-        var youtube = new YoutubeClient();
-        var videos = youtube.Search.GetVideosAsync("time to make history").GetAsyncEnumerator();
-        await videos.MoveNextAsync();
-        await videos.MoveNextAsync();
-        await videos.MoveNextAsync();
-        await videos.MoveNextAsync();
-        Debug.Log(videos.Current.Title);
-        var streamInfo = (await youtube.Videos.Streams.GetManifestAsync(videos.Current.Id)).GetAudioOnlyStreams().TryGetWithHighestBitrate();
-        var dl = youtube.Videos.Streams.DownloadAsync(streamInfo, Application.persistentDataPath + "/test." + streamInfo.Container.Name);
-        await dl;
-        if (dl.IsCompletedSuccessfully) Debug.Log("Download successful!");
-    }
+    //public async UniTask TestFunc()
+    //{
+    //    var youtube = new YoutubeClient();
+    //    var streamInfo = (await youtube.Videos.Streams.GetManifestAsync("ux9-_2SN1h0")).GetAudioOnlyStreams().TryGetWithHighestBitrate();
+    //    var dl = youtube.Videos.Streams.DownloadAsync(streamInfo, Application.persistentDataPath + "/test." + streamInfo.Container.Name);
+    //    await dl;
+    //    if (dl.IsCompletedSuccessfully) Debug.Log("Download successful!");
+    //}
 
 }

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 
 public interface IAudioPlayer
 {
@@ -7,6 +6,15 @@ public interface IAudioPlayer
     public void Play();
     public void Pause();
     public float CurPos { get; set; }
-    public Metadata CurTrack { get; set; }
-    public float Volume { get; set; }  
+    public string CurFile { get; set; }
+    public float Volume { get; set; }
+
+    public float Duration { get; }
+
+    public event PlayerEvent OnStart;
+    public event PlayerEvent OnStop;
+    public event PlayerEvent OnPause;
+    public event PlayerEvent OnResume;
 }
+
+public delegate void PlayerEvent();
