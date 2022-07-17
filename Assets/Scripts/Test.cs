@@ -13,8 +13,10 @@ public class Test : MonoBehaviour
 {
     public void Start()
     {
+        Application.targetFrameRate = 60;
+        
         //_ = TestFunc();
-    
+
         // Get an instance of the BackgroundAudioImplementation class for the current build platform
         //var instance = BackgroundAudioManager.NewInstance();
 

@@ -8,20 +8,29 @@ using TMPro;
 
 public class VideoInfo : RecyclingListViewItem
 {
-    [SerializeField] private Image thumbnailDisplay;
+    [SerializeField] private NetworkedSprite thumbnailDisplay;
     [SerializeField] private TextMeshProUGUI titleDisplay;
     [SerializeField] private TextMeshProUGUI extraInfoDisplay;
 
     private Metadata metadata;
 
-    public async UniTask Populate(string id, int index)
+    public void ShowLoading()
     {
-        thumbnailDisplay.sprite = null;
         titleDisplay.text = "...";
         extraInfoDisplay.text = "...";
-        metadata = await MetadataCache.GetByID(id);
-        thumbnailDisplay.sprite = Utils.SpriteFromJpg(metadata.thumbJpg);
+    }
+    
+    public void DisplayData()
+    {
+        _ = thumbnailDisplay.Set(metadata.thumbnailUrl);
         titleDisplay.text = metadata.title;
-        extraInfoDisplay.text = string.Format("{0} • {1} | {2} ... {3}", metadata.channelName, metadata.uploadDate.LocalDateTime.ToString("d"), metadata.duration.ToString("mm\\:ss"), index);
+        extraInfoDisplay.text = string.Format("{0} • {1} | {2}", metadata.channelName, metadata.uploadDate.LocalDateTime.ToString("d"), metadata.duration.ToString("mm\\:ss"));
+    }
+
+    public void Populate(Metadata meta)
+    {
+        metadata = meta;
+
+        DisplayData();
     }
 }

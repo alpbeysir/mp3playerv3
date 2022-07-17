@@ -4,25 +4,27 @@ using YoutubeExplode;
 using YoutubeExplode.Common;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using System.Threading.Tasks;
 
 [Serializable]
-public partial class Metadata
+public class Metadata : CacheObject<Metadata>
 {
-    public string id;
     public string title;
     public string channelName;
     public TimeSpan duration;
-    public byte[] thumbJpg;
+    public string thumbnailUrl;
     public DateTimeOffset uploadDate;
 
-    public static async UniTask<Metadata> FromVideo(YoutubeExplode.Videos.Video video)
+    public Metadata(string id) : base(id) { }
+    
+    public static async Task<Metadata> Creator(string id)
     {
-        Metadata meta = new Metadata();
-        meta.id = video.Id;
+        var video = await Youtube.Instance.Videos.GetAsync(id);
+        Metadata meta = new Metadata(video.Id);
         meta.title = video.Title;
         meta.channelName = video.Author.ChannelTitle;
         meta.duration = (TimeSpan)video.Duration;
-        meta.thumbJpg = await Utils.DownloadFromURL(video.Thumbnails.GetWithHighestResolution().Url);
+        meta.thumbnailUrl = video.Thumbnails.GetWithHighestResolution().Url;
         meta.uploadDate = video.UploadDate;
         return meta;
     }
