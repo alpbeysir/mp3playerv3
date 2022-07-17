@@ -42,7 +42,6 @@ public class Test : MonoBehaviour
         await videos.MoveNextAsync();
         Debug.Log(videos.Current.Title);
         var streamInfo = (await youtube.Videos.Streams.GetManifestAsync(videos.Current.Id)).GetAudioOnlyStreams().TryGetWithHighestBitrate();
-        var stream = await youtube.Videos.Streams.GetAsync(streamInfo);
         var dl = youtube.Videos.Streams.DownloadAsync(streamInfo, Application.persistentDataPath + "/test." + streamInfo.Container.Name);
         await dl;
         if (dl.IsCompletedSuccessfully) Debug.Log("Download successful!");

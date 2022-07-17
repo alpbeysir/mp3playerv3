@@ -13,18 +13,18 @@ public class VideoInfo : RecyclingListViewItem
     [SerializeField] private TextMeshProUGUI extraInfoDisplay;
 
     private Metadata metadata;
-
     public void ShowLoading()
     {
+        thumbnailDisplay.ShowLoading(null);
         titleDisplay.text = "...";
         extraInfoDisplay.text = "...";
     }
     
     public void DisplayData()
     {
-        _ = thumbnailDisplay.Set(metadata.thumbnailUrl);
+        _ = thumbnailDisplay.Set(metadata.sdThumbnailUrl);
         titleDisplay.text = metadata.title;
-        extraInfoDisplay.text = string.Format("{0} • {1} | {2}", metadata.channelName, metadata.uploadDate.LocalDateTime.ToString("d"), metadata.duration.ToString("mm\\:ss"));
+        extraInfoDisplay.text = string.Format("{0} • {1}", metadata.channelName, metadata.duration.ToString("mm\\:ss"));
     }
 
     public void Populate(Metadata meta)

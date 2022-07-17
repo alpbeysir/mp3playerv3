@@ -16,9 +16,21 @@ public abstract class CacheObject<T>
 public static class Cache
 {
     private static string cachePath => Application.persistentDataPath + "/cache/";
-    public static async Task<T> Get<T>(string id) where T : CacheObject<T>
+
+    public static bool TryGet<T>(string id, out T result) where T : CacheObject<T>
     {
-        string path = cachePath + string.Format("{0}.{1}", typeof(T).FullName, ReplaceInvalidChars(id));
+        return FileUtil.ReadFile(GetPath<T>(id), out result);
+    }
+    public static void Clear()
+    {
+        if (Directory.Exists(cachePath))
+        {
+            Directory.Delete(cachePath, true);
+        }
+    }
+    public static async Task<T> GetOrCreate<T>(string id) where T : CacheObject<T>
+    {
+        string path = GetPath<T>(id);
         T ret;
         if (!FileUtil.ReadFile(path, out ret))
         {
@@ -29,8 +41,13 @@ public static class Cache
         }
         return ret;
     }
-    public static string ReplaceInvalidChars(string filename)
+
+    public static void Save<T>(T ret) where T : CacheObject<T>
     {
-        return string.Join("_", filename.Split(Path.GetInvalidFileNameChars()));
+        string path = GetPath<T>(ret.id);
+        FileUtil.WriteFile(ret, path);
     }
+    
+    public static string ReplaceInvalidChars(string filename) => string.Join("_", filename.Split(Path.GetInvalidFileNameChars()));
+    private static string GetPath<T>(string id) => string.Format("{0}.{1}", typeof(T).FullName, ReplaceInvalidChars(id));
 }
