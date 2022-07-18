@@ -14,7 +14,6 @@ public class SearchManager : Singleton<SearchManager>
 
     public int maxResults;
     public int curLoadedResults;
-    public int maxSeenView;
 
     private IAsyncEnumerator<YoutubeExplode.Search.VideoSearchResult> searchEnumerator;
 
@@ -22,7 +21,7 @@ public class SearchManager : Singleton<SearchManager>
 
     private CancellationTokenSource cts = new CancellationTokenSource();
 
-    public int runningSrcCount;
+    public bool searching;
 
     private void Start()
     {
@@ -38,22 +37,25 @@ public class SearchManager : Singleton<SearchManager>
         {
             //await UniTask.SwitchToThreadPool();
             Debug.Log("Searching for " + query);
-            runningSrcCount++;
+            searching = true;
             searchResults.Clear();
-            maxSeenView = 0;
+            //maxSeenView = 0;
             curLoadedResults = 0;
+            listView.RowCount = maxResults;
             listView.Refresh();
             searchEnumerator = Youtube.Instance.Search.GetVideosAsync(query).GetAsyncEnumerator();
             while (curLoadedResults < maxResults)
             {
                 token.ThrowIfCancellationRequested();
-                await UniTask.WaitUntil(() => maxSeenView + 3 >= curLoadedResults, cancellationToken: token);
-                await searchEnumerator.MoveNextAsync();
+                //await UniTask.WaitUntil(() => maxSeenView + 3 >= curLoadedResults, cancellationToken: token);
+                
+                if (!await searchEnumerator.MoveNextAsync())
+                {
+                    listView.RowCount = curLoadedResults; 
+                    break; 
+                }
+                
                 searchResults[curLoadedResults] = searchEnumerator.Current;
-
-                //var updatedDisplay = listView.GetRowItem(curLoadedResults);
-                //if (updatedDisplay != null) (updatedDisplay as VideoInfo).Populate(FromSearchResult(searchResults[curLoadedResults]));
-
                 curLoadedResults++;
             }
         }
@@ -64,35 +66,36 @@ public class SearchManager : Singleton<SearchManager>
         finally
         {
             _ = searchEnumerator.DisposeAsync();
-            runningSrcCount--;
+            searching = false;
         }
     }
 
-    public async void OnSearchBarChanged()
+    public async UniTask SearchInit()
     {
         if (searchBar.text.Length < 1 || cts.IsCancellationRequested) return;
 
         cts.Cancel();
-        await UniTask.WaitUntil(() => runningSrcCount == 0);
+        await UniTask.WaitUntil(() => !searching);
         cts = new CancellationTokenSource();
         _ = Search(searchBar.text, cts.Token).AttachExternalCancellation(cts.Token);
     }
 
-    private async UniTask InternalPopulate(VideoInfo info, int index)
-    {
-        //Wait for search data to come
-        if (index > maxSeenView) maxSeenView = index;
-        info.ShowLoading();
-        await UniTask.WaitUntil(() => searchResults.ContainsKey(index), cancellationToken: cts.Token);
 
-        //Populate view
+    public void OnSearchBarChanged() => _ = SearchInit();
+
+    private async UniTask InternalPopulate(VideoInfo info, int index, CancellationToken token)
+    {
         YoutubeExplode.Search.VideoSearchResult res;
-        lock (searchResults)
+        while (!searchResults.TryGetValue(index, out res) && info != null)
         {
-            if (searchResults.TryGetValue(index, out res))
-                info.Populate(Metadata.Creator(res));
+            token.ThrowIfCancellationRequested();
+            info.ShowLoading();
+            await UniTask.Yield();
         }
+
+        if (info != null)
+            info.Populate(Metadata.Creator(res));
     }
 
-    private void PopulateDelegate(RecyclingListViewItem item, int index) => InternalPopulate(item as VideoInfo, index).AttachExternalCancellation(cts.Token);
+    private void PopulateDelegate(RecyclingListViewItem item, int index) => InternalPopulate(item as VideoInfo, index, cts.Token).AttachExternalCancellation(cts.Token);
 }

@@ -20,10 +20,10 @@ public class AndroidPlayer : IAudioPlayer
     public void Init()
     {
         player = BackgroundAudioManager.NewInstance();
-        //player.OnAudioStarted += OnStart.Invoke;
-        //player.OnAudioStopped += OnStop.Invoke;
-        //player.OnAudioPaused += OnPause.Invoke;
-        //player.OnAudioResumed += OnResume.Invoke;
+        player.OnAudioStarted += OnStart.Invoke;
+        player.OnAudioStopped += OnStop.Invoke;
+        player.OnAudioPaused += OnPause.Invoke;
+        player.OnAudioResumed += OnResume.Invoke;
     }
 
     public void Pause() => player.Pause();

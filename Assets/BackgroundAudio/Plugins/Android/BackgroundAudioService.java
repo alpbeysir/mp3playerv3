@@ -287,10 +287,10 @@ public class BackgroundAudioService extends Service {
         intent.putExtra(EXTRA_UNITY_PACKAGE_ID, packageId);
         intent.putExtra(EXTRA_PATH, path);
 
-        Resources res = context.getResources();
-        int icon = res.getIdentifier(NOTIFICATION_ICON_NAME, "drawable", packageId);
+        //Resources res = context.getResources();
+        //int icon = res.getIdentifier(NOTIFICATION_ICON_NAME, "drawable", packageId);
 
-        intent.putExtra(EXTRA_ICON, icon);
+        //intent.putExtra(EXTRA_ICON, icon);
 
         serviceActive = true;
 
