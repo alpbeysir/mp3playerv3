@@ -24,7 +24,6 @@ namespace BackgroundAudio.Android
     
         protected override void Initialize()
         {
-            Application.runInBackground = true;
             if (_unityActivity == null)
             {
                 AndroidJavaClass unityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
@@ -80,9 +79,9 @@ namespace BackgroundAudio.Android
             }
         }
     
-        public override void Play(string path)
+        public override void Play(string path, string title, string desc)
         {
-            CallOnService("play", _unityActivity, Id, path, Application.identifier);
+            CallOnService("play", _unityActivity, Id, path, title, desc, "com.alpbeysir.mp3playerv3");
         }
     
         public override void Pause()
@@ -138,7 +137,7 @@ namespace BackgroundAudio.Android
     
         public override void Stop()
         {
-            if (!_paused && !_playing) return;
+            //if (!_paused && !_playing) return;
     
             CallOnService("disposeInstance", _unityActivity, Id);
         }

@@ -1,33 +1,47 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using BackgroundAudio;
+using NAudio.Wave;
 
-public class WindowsPlayer : IAudioPlayer
+#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
+public class WindowsPlayer : AudioPlayer
 {
-    public float CurPos { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public string CurFile { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public float Volume { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    private WaveOutEvent output = new WaveOutEvent();
+    private AudioFileReader reader;
+    
+    public override float CurPos { get => (float)reader.CurrentTime.TotalSeconds; set => reader.CurrentTime = TimeSpan.FromSeconds(value); }
+    public override string CurFile {
+        get => reader.FileName;
+        set
+        {
+            if (reader != null) Dispose();
+            reader = new AudioFileReader(value);
+            output.Init(reader);
+            output.Play();
+        }
+    }
+    public override float Volume { get => output.Volume; set => output.Volume = value; }
 
-    public float Duration => throw new NotImplementedException();
+    public override float Duration => (float)reader.TotalTime.TotalSeconds;
 
-    public event PlayerEvent OnStart;
-    public event PlayerEvent OnStop;
-    public event PlayerEvent OnPause;
-    public event PlayerEvent OnResume;
+    public override bool IsPaused => output.PlaybackState == PlaybackState.Paused;
 
-    public void Init()
+    public override void Pause() => output.Pause();
+
+    public override void Resume() => output.Play();
+
+    private void StoppedCallback(object s, StoppedEventArgs a) => OnStop?.Invoke();
+
+    public WindowsPlayer()
     {
-        throw new NotImplementedException();
+        output.PlaybackStopped += StoppedCallback;
+    }
+    public override void Dispose()
+    {
+        output.PlaybackStopped -= StoppedCallback;
+        output.Dispose();
+        reader.Dispose();
     }
 
-    public void Pause()
-    {
-        throw new NotImplementedException();
-    }
-
-    public void Play()
-    {
-        throw new NotImplementedException();
-    }
 }
+#endif

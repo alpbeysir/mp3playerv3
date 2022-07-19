@@ -15,7 +15,7 @@ namespace BackgroundAudio.Base
         }
 
         protected abstract void Initialize();
-        public abstract void Play(string path);
+        public abstract void Play(string path, string title, string desc);
         public abstract void Stop();
         public abstract void Pause();
         public abstract void Resume();

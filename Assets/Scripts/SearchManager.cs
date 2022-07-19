@@ -25,6 +25,7 @@ public class SearchManager : Singleton<SearchManager>
 
     private void Start()
     {
+        Application.targetFrameRate = 60;
         ApplicationChrome.statusBarState = ApplicationChrome.States.Visible;
         ApplicationChrome.navigationBarState = ApplicationChrome.States.Visible;
         listView.ItemCallback += PopulateDelegate;
@@ -35,7 +36,6 @@ public class SearchManager : Singleton<SearchManager>
     {
         try
         {
-            //await UniTask.SwitchToThreadPool();
             Debug.Log("Searching for " + query);
             searching = true;
             searchResults.Clear();
@@ -43,7 +43,10 @@ public class SearchManager : Singleton<SearchManager>
             curLoadedResults = 0;
             listView.RowCount = maxResults;
             listView.Refresh();
-            searchEnumerator = Youtube.Instance.Search.GetVideosAsync(query).GetAsyncEnumerator();
+
+            //Search
+            await UniTask.SwitchToThreadPool();
+            searchEnumerator = Youtube.Instance.Search.GetVideosAsync(query, token).GetAsyncEnumerator();
             while (curLoadedResults < maxResults)
             {
                 token.ThrowIfCancellationRequested();
@@ -51,7 +54,8 @@ public class SearchManager : Singleton<SearchManager>
                 
                 if (!await searchEnumerator.MoveNextAsync())
                 {
-                    listView.RowCount = curLoadedResults; 
+                    await UniTask.SwitchToMainThread();
+                    listView.RowCount = curLoadedResults;
                     break; 
                 }
                 

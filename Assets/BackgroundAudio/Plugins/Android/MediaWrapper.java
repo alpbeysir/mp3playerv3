@@ -14,8 +14,8 @@ public class MediaWrapper {
     }
 
     public void Reset(){
-        this.player.reset();
         this.playing = false;
         this.paused = false;
+        this.player.reset();
     }
 }

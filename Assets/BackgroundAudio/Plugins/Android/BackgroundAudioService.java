@@ -78,7 +78,7 @@ public class BackgroundAudioService extends Service {
                     MediaPlayer mediaPlayer;
                     if (usedMediaPlayers.containsKey(instanceId)) {
                         wrapper = usedMediaPlayers.get(instanceId);
-                        wrapper.Reset();
+                        //wrapper.Reset();
                     } else {
                         wrapper = new MediaWrapper(instanceId);
                         usedMediaPlayers.put(instanceId, wrapper);
@@ -88,8 +88,8 @@ public class BackgroundAudioService extends Service {
                     mediaPlayer = wrapper.player;
                     mediaPlayer.setDataSource(this, myUri);
                     mediaPlayer.setOnCompletionListener((mp) -> {
-                        if (isLooping(instanceId)) return;
-                        disposeInstance(this, instanceId);
+                        wrapper.Reset();
+                        baCallbacks.get(instanceId).BackgroundAudioStopped();
                     });
                     mediaPlayer.prepare();
                     mediaPlayer.start();
@@ -245,6 +245,7 @@ public class BackgroundAudioService extends Service {
 
 
         } catch (Exception e) {
+            Log.e(TAG, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
             e.printStackTrace();
         }
 
@@ -364,7 +365,6 @@ public class BackgroundAudioService extends Service {
 
     public static int getDuration(int id) {
         if (!usedMediaPlayers.containsKey(id)) return -1;
-        android.util.Log.d(TAG, "getDuration: KEY EXISTS");
 
         MediaWrapper wrapper = usedMediaPlayers.get(id);
         MediaPlayer mediaPlayer = wrapper.player;

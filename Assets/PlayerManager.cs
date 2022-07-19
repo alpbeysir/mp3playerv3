@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Threading;
 
 public class PlayerManager : MonoBehaviour
 {
@@ -11,38 +12,66 @@ public class PlayerManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI channelDisplay;
     [SerializeField] private Slider seekBar;
 
-    private IAudioPlayer player;
+    private static AudioPlayer player;
+
+    private static string playing;
+
+    private bool keepPlaying;
 
     public void Start()
     {
-        if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer) player = new WindowsPlayer();
-        else player = new AndroidPlayer();
+        Application.runInBackground = true;
+        
+#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
+            player = new WindowsPlayer();
+#else
+            player = new AndroidPlayer();
+#endif
 
-        player.Init();
-        player.CurFile = Application.persistentDataPath + "/test.webm";
-        player.Play();
+        //if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
+        //else 
+        AudioPlayer.OnStop += OnPlayerStop;
+
+        playing = Application.persistentDataPath + "/test.mp3";
+        player.CurFile = playing;
+        
     }
 
     private void Update()
     {
-        seekBar.SetValueWithoutNotify(player.CurPos / player.Duration);
-        titleDisplay.text = player.CurPos.ToString();
-        channelDisplay.text = player.Duration.ToString();
+        float asd = (float)player.CurPos / (float)player.Duration;
+        titleDisplay.text = asd.ToString();
+        seekBar.SetValueWithoutNotify(float.Parse(titleDisplay.text));
     }
     public void OnPrevious()
     {
-        
+        keepPlaying = false;
     }
     public void OnPlayPause()
     {
-        
+        if (player.IsPaused) player.Resume();
+        else player.Pause();
     }
     public void OnNext()
     {
-        
+        keepPlaying = true;
     }
     public void OnSeek()
     {
-        
+        player.CurPos = seekBar.value * player.Duration;
+    }
+    public void OnPlayerStop()
+    {
+        Debug.Log("OnStop called");
+        if (keepPlaying)
+        {
+            player.CurFile = playing;
+            Debug.Log("Restarted");
+        }
+    }
+
+    public void OnDestroy()
+    {
+        player.Dispose();
     }
 }

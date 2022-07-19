@@ -15,7 +15,7 @@ namespace BackgroundAudio.UnsupportedPlatform
             throw new PlatformNotSupportedException();
         }
 
-        public override void Play(string path)
+        public override void Play(string path, string title, string desc)
         {
             throw new PlatformNotSupportedException();
         }
