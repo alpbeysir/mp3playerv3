@@ -17,4 +17,5 @@ public abstract class AudioPlayer : IDisposable
     public static Action OnStop;
     public static Action OnPause;
     public static Action OnResume;
+    public static Action OnPrepared;
 }

@@ -6,13 +6,15 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 
+namespace Google.MaterialDesign.Icons
+{
 
 public class MaterialIconSelectionWindow : EditorWindow
 {
 	private static readonly Color darkColor = new Color(0.196f, 0.196f, 0.196f);
 	private static readonly Color lightColor = new Color(0.804f, 0.804f, 0.804f);
 
-	private int iconSize = 60;
+	private int iconSize = 58;
 	private int labelHeight = 24;
 	private int spacing = 10;
 	private bool showNames = true;
@@ -89,7 +91,7 @@ public class MaterialIconSelectionWindow : EditorWindow
 			toolbarSeachCancelButtonEmptyStyle = new GUIStyle("ToolbarSeachCancelButtonEmpty");
 			toolbarLabelStyle = new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleCenter };
 			iconSelectionStyle = new GUIStyle("selectionrect");
-			iconImageStyle = new GUIStyle() { font = MaterialIconsRegular, fontSize = iconSize - spacing, alignment = TextAnchor.MiddleCenter };
+			iconImageStyle = new GUIStyle() { font = MaterialIconsRegular, fontSize = iconSize - spacing - 10, alignment = TextAnchor.MiddleCenter };
 			iconLabelStyle = new GUIStyle(EditorStyles.miniLabel) { alignment = TextAnchor.UpperCenter, wordWrap = true };
 			iconImageStyle.padding = iconLabelStyle.padding = new RectOffset();
 			iconImageStyle.normal.textColor = iconLabelStyle.normal.textColor = EditorGUIUtility.isProSkin ? lightColor : darkColor;
@@ -224,9 +226,12 @@ public class MaterialIconSelectionWindow : EditorWindow
 				if(GUI.Button(buttonRect, GUIContent.none, GUIStyle.none))
 				{
 					GUI.FocusControl(null);
+					bool shouldClose = data.codeGUIContent.text == selected;
 					selected = data.codeGUIContent.text;
 					selectedName = data.name;
 					onSelectionChanged.Invoke(selected);
+					if(shouldClose)
+						base.Close();
 				}
 			}
 		}
@@ -322,4 +327,4 @@ public class MaterialIconSelectionWindow : EditorWindow
 
 }
 
-
+}

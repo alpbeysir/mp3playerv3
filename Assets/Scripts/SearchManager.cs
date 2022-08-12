@@ -5,17 +5,18 @@ using YoutubeExplode;
 using Cysharp.Threading.Tasks;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Concurrent;
+using System;
+using UnityEngine.Events;
 
-public class SearchManager : Singleton<SearchManager>
+public class SearchManager : UIScreen
 {
     [SerializeField] private RecyclingListView listView;
+    [SerializeField] private GameObject loadingView;
     [SerializeField] private TMPro.TMP_InputField searchBar;
-
+    [SerializeField] private int disableLoadThreshold;
+    
     public int maxResults;
     public int curLoadedResults;
-
-    private IAsyncEnumerator<YoutubeExplode.Search.VideoSearchResult> searchEnumerator;
 
     private Dictionary<int, YoutubeExplode.Search.VideoSearchResult> searchResults = new();
 
@@ -23,34 +24,51 @@ public class SearchManager : Singleton<SearchManager>
 
     public bool searching;
 
+    private Queue<int> toBeUpdated = new Queue<int>();
+
+    private IAsyncEnumerator<YoutubeExplode.Search.VideoSearchResult> searchEnumerator;
+    
     private void Start()
     {
-        Application.targetFrameRate = 60;
-        ApplicationChrome.statusBarState = ApplicationChrome.States.Visible;
-        ApplicationChrome.navigationBarState = ApplicationChrome.States.Visible;
         listView.ItemCallback += PopulateDelegate;
         listView.RowCount = maxResults;
     }
 
+    private void Update()
+    {
+        if (toBeUpdated.Count > 0)
+        {
+            var idx = toBeUpdated.Dequeue();
+            var item = listView.GetRowItem(idx);
+            if (item)
+            {
+                var info = item as VideoInfo;
+                if (info != null)
+                    info.Populate(Metadata.CreatorFromSearch(searchResults[idx]), (m) => PlayerManager.playlist.Add(m.id));
+            }
+        }
+    }
+
     public async UniTask Search(string query, CancellationToken token)
     {
+        Debug.Log("Searching for " + query);
+        searching = true;
+        searchResults.Clear();
+        curLoadedResults = 0;
+        listView.RowCount = maxResults;
+        listView.Refresh();
+        
+        listView.gameObject.SetActive(false);
+        loadingView.gameObject.SetActive(true);
+        
+        await UniTask.SwitchToThreadPool();
+        searchEnumerator = Youtube.Instance.Search.GetVideosAsync(query, token).GetAsyncEnumerator();      
         try
         {
-            Debug.Log("Searching for " + query);
-            searching = true;
-            searchResults.Clear();
-            //maxSeenView = 0;
-            curLoadedResults = 0;
-            listView.RowCount = maxResults;
-            listView.Refresh();
-
             //Search
-            await UniTask.SwitchToThreadPool();
-            searchEnumerator = Youtube.Instance.Search.GetVideosAsync(query, token).GetAsyncEnumerator();
             while (curLoadedResults < maxResults)
             {
                 token.ThrowIfCancellationRequested();
-                //await UniTask.WaitUntil(() => maxSeenView + 3 >= curLoadedResults, cancellationToken: token);
                 
                 if (!await searchEnumerator.MoveNextAsync())
                 {
@@ -58,18 +76,30 @@ public class SearchManager : Singleton<SearchManager>
                     listView.RowCount = curLoadedResults;
                     break; 
                 }
-                
-                searchResults[curLoadedResults] = searchEnumerator.Current;
-                curLoadedResults++;
+
+                if (curLoadedResults == disableLoadThreshold)
+                    _ = DisableLoadingView();
+
+
+                if (searchEnumerator.Current != null)
+                {
+                    searchResults[curLoadedResults] = searchEnumerator.Current;
+                    toBeUpdated.Enqueue(curLoadedResults);
+                    //_ = OnSearchResultObtained(curLoadedResults);
+                    curLoadedResults++;
+                }
             }
         }
-        catch
+        catch (Exception e)
         {
-            Debug.Log("Search for " + query + " was canceled!");
+            if (!e.IsOperationCanceledException())
+                Debug.LogError("Search encountered error: " + e.Message + e.StackTrace);
+            else
+                Debug.Log("Search for " + query + " was canceled");           
         }
         finally
         {
-            _ = searchEnumerator.DisposeAsync();
+            await searchEnumerator.DisposeAsync();
             searching = false;
         }
     }
@@ -81,25 +111,53 @@ public class SearchManager : Singleton<SearchManager>
         cts.Cancel();
         await UniTask.WaitUntil(() => !searching);
         cts = new CancellationTokenSource();
-        _ = Search(searchBar.text, cts.Token).AttachExternalCancellation(cts.Token);
+        _ = Search(searchBar.text, cts.Token);
     }
 
 
     public void OnSearchBarChanged() => _ = SearchInit();
 
-    private async UniTask InternalPopulate(VideoInfo info, int index, CancellationToken token)
+    public async UniTask DisableLoadingView()
     {
-        YoutubeExplode.Search.VideoSearchResult res;
-        while (!searchResults.TryGetValue(index, out res) && info != null)
-        {
-            token.ThrowIfCancellationRequested();
-            info.ShowLoading();
-            await UniTask.Yield();
-        }
-
-        if (info != null)
-            info.Populate(Metadata.Creator(res));
+        await UniTask.SwitchToMainThread();
+        listView.gameObject.SetActive(true);
+        loadingView.gameObject.SetActive(false);
     }
 
-    private void PopulateDelegate(RecyclingListViewItem item, int index) => InternalPopulate(item as VideoInfo, index, cts.Token).AttachExternalCancellation(cts.Token);
+    private async UniTask OnSearchResultObtained(int index)
+    {
+        await UniTask.SwitchToMainThread();
+        var info = listView.GetRowItem(index) as VideoInfo;
+        if (searchResults.ContainsKey(index))
+        lock (searchResults)
+        {
+            if (info != null)
+                info.Populate(Metadata.CreatorFromSearch(searchResults[index]), (m) => PlayerManager.playlist.Add(m.id));
+        }
+    }
+    private void PopulateDelegate(RecyclingListViewItem item, int index)
+    {
+        if (searchResults.ContainsKey(index))
+            (item as VideoInfo).Populate(Metadata.CreatorFromSearch(searchResults[index]), (m) => PlayerManager.playlist.Add(m.id));
+    }
+
+    public override void Show()
+    {
+        
+    }
+
+    public override void Hide()
+    {
+        cts.Cancel();
+        cts = new CancellationTokenSource();
+        Resources.UnloadUnusedAssets();
+
+        searchResults.Clear();
+        curLoadedResults = 0;
+        listView.RowCount = maxResults;
+        listView.Refresh();
+
+        listView.gameObject.SetActive(false);
+        loadingView.gameObject.SetActive(false);
+    }
 }

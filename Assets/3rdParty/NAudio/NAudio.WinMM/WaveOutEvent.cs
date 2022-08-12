@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Threading;
 using System.Runtime.InteropServices;
+using static UnityEngine.Debug;
 
 // ReSharper disable once CheckNamespace
 namespace NAudio.Wave
@@ -138,6 +139,7 @@ namespace NAudio.Wave
             }
             finally
             {
+                Debug.WriteLine("PlaybackThread: finished");
                 playbackState = PlaybackState.Stopped;
                 // we're exiting our background thread
                 RaisePlaybackStoppedEvent(exception);

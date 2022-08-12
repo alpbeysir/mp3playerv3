@@ -4,6 +4,8 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using UnityEditor;
 
+namespace Google.MaterialDesign.Icons
+{
 
 internal static class MenuOptions
 {
@@ -38,3 +40,4 @@ internal static class MenuOptions
 	}
 }
 
+}

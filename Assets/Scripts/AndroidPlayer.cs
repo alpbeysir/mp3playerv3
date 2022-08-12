@@ -1,50 +1,62 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using BackgroundAudio;
 using UnityEngine;
 
 public class AndroidPlayer : AudioPlayer
 {
-    private BackgroundAudio.Base.BackgroundAudioImplementation player;
-    public override float CurPos { get => player.GetCurrentPosition(); set => player.Seek(value); }
-    public override float Volume { get => player.GetVolume(); set => player.SetVolume(value); }
+    public class BackgroundAudioInterface : AndroidJavaProxy
+    {
+        public BackgroundAudioInterface() : base("com.alpbeysir.backgroundaudio.BackgroundAudioInterface") { }
+
+        //Called from native code
+        private void Started() => OnStart?.Invoke();
+        private void Stopped() => OnStop?.Invoke();
+        private void Paused() => OnPause?.Invoke();
+        private void Resumed() => OnResume?.Invoke();
+        
+        //TODO Handle Info and Error
+        private void Info(int what, int extra) { Debug.Log("Info called with " + what + extra); }
+        private void Error(int what, int extra) { Debug.Log("Error called with " + what + extra); }
+        
+        private void Prepared() { Debug.Log("Prepared called"); OnPrepared?.Invoke(); }
+    }
+
     public override string CurFile
     {
         get => _curFile;
         set
-        {
+        {          
             _curFile = value;
-            player.Play(_curFile, "Break My Heart", "Dua Lipa");
+            CallOnService("start", _curFile, title, desc, iconUri);
+
         }
     }
 
-    public string _curFile;
-
-    public override float Duration => player.GetDuration();
-
-    public override bool IsPaused => player.IsPaused();
+    public override float CurPos { get => CallOnService<float>("getPosition"); set => CallOnService("setPosition", value); }
+    public override float Volume { get => 1.0f; set => _ = value; }
     
+    //TODO refactor notification create and destroy into functions
+    public static string title = "Playing", desc = "Tap to return to player", iconUri;
+
+    public override float Duration => CallOnService<float>("getDuration");
+    public override bool IsPaused => CallOnService<bool>("isPaused");
+    public override void Pause() => CallOnService("pause");
+    public override void Resume() => CallOnService("resume");
+    public override void Dispose() => CallOnService("dispose");
+
     public AndroidPlayer()
     {
         if (Application.platform != RuntimePlatform.Android) return;
 
-        player = BackgroundAudioManager.NewInstance();
-        player.OnAudioStarted += Player_OnAudioStarted;
-        player.OnAudioStopped += Player_OnAudioStopped;
-        player.OnAudioPaused += Player_OnAudioPaused;
-        player.OnAudioResumed += Player_OnAudioResumed;
-    }
-    private static void Player_OnAudioResumed() => OnResume?.Invoke();
-    private static void Player_OnAudioPaused() => OnPause?.Invoke();
-    private static void Player_OnAudioStopped() => OnStop?.Invoke();
-    private static void Player_OnAudioStarted() => OnStart?.Invoke();
+        service = new AndroidJavaClass("com.alpbeysir.backgroundaudio.BackgroundAudioService");
 
-    public override void Pause() => player.Pause();
-    public override void Resume() => player.Resume();
-
-    public override void Dispose()
-    {
-        player.Stop();
+        AndroidJavaClass unityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+        CallOnService("initialize", unityClass.GetStatic<AndroidJavaObject>("currentActivity"), baInterface);
     }
+
+    private static BackgroundAudioInterface baInterface = new BackgroundAudioInterface();
+    private static AndroidJavaClass service;
+    private static string _curFile;
+    private static float _duration;
+    private static void CallOnService(string method, params object[] args) => service.CallStatic(method, args);
+    private static T CallOnService<T>(string method, params object[] args) => service.CallStatic<T>(method, args);
 }

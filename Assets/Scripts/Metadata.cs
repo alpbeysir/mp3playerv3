@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Linq;
-
 [Serializable]
 public class Metadata : CacheObject<Metadata>
 {
@@ -14,7 +12,8 @@ public class Metadata : CacheObject<Metadata>
     public DateTimeOffset uploadDate;
 
     public Metadata(string id) : base(id) { }
-    
+
+    [UnityEngine.Scripting.Preserve]
     public static async Task<Metadata> Creator(string id)
     {
         var video = await Youtube.Instance.Videos.GetAsync(id);
@@ -30,21 +29,21 @@ public class Metadata : CacheObject<Metadata>
             if (lowest.Resolution.Area > t.Resolution.Area) lowest = t;
             if (highest.Resolution.Area < t.Resolution.Area) highest = t;
         }
+        
         meta.sdThumbnailUrl = lowest.Url;
         meta.hdThumbnailUrl = highest.Url;
 
         return meta;
     }
 
-    public static Metadata Creator(YoutubeExplode.Search.VideoSearchResult sr)
+    public static Metadata CreatorFromSearch(YoutubeExplode.Search.VideoSearchResult sr)
     {
-        return new Metadata(sr.Id)
-        {
-            title = sr.Title,
-            channelName = sr.Author.ChannelTitle,
-            uploadDate = System.DateTimeOffset.Now,
-            duration = (System.TimeSpan)sr.Duration,
-            sdThumbnailUrl = sr.Thumbnails[0].Url
-        };
+        var meta = new Metadata(sr.Id.ToString());
+        meta.title = sr.Title;
+        meta.channelName = sr.Author.ChannelTitle;
+        meta.uploadDate = DateTime.Now;
+        meta.duration = sr.Duration != null ? (TimeSpan)sr.Duration : TimeSpan.Zero;
+        meta.sdThumbnailUrl = sr.Thumbnails[0].Url;
+        return meta;
     }
 }
