@@ -63,7 +63,7 @@ public class ScreenManager : Singleton<ScreenManager>
 
         history.Push(screen);
         screen.gameObject.SetActive(true);
-        screen.transform.DOLocalMoveX(Screen.width * 2, 0f).OnComplete(() => { screen.transform.DOLocalMoveX(0f, animSpeed).OnComplete(() => { toBeHidden?.gameObject.SetActive(false); });  });
+        screen.transform.DOLocalMoveX(Screen.width, 0f).OnComplete(() => { screen.transform.DOLocalMoveX(0f, animSpeed).OnComplete(() => { toBeHidden?.gameObject.SetActive(false); });  });
         screen.Show();
         Log("Showing screen " + screen.name);
     }

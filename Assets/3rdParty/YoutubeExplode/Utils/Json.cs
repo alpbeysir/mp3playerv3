@@ -58,6 +58,7 @@ namespace YoutubeExplode.Utils
             }
         }
 
+        [UnityEngine.Scripting.Preserve]
         public static HttpContent SerializeToHttpContent<T>(T obj) => new StringContent(
             JsonSerializer.Serialize(obj),
             Encoding.UTF8,

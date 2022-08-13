@@ -26,16 +26,23 @@ public class AndroidPlayer : AudioPlayer
         set
         {          
             _curFile = value;
-            CallOnService("start", _curFile, title, desc, iconUri);
 
+            AndroidJNI.AttachCurrentThread();
+            CallOnService("start", _curFile, title, desc, iconUri);
+            AndroidJNI.DetachCurrentThread();
         }
     }
 
     public override float CurPos { get => CallOnService<float>("getPosition"); set => CallOnService("setPosition", value); }
     public override float Volume { get => 1.0f; set => _ = value; }
     
-    //TODO refactor notification create and destroy into functions
-    public static string title = "Playing", desc = "Tap to return to player", iconUri;
+    private static string title = "Playing", desc = "Tap to return to player", iconUri;
+    public static void SetNotifData(string _title, string _desc, string _iconUri)
+    {
+        title = _title;
+        desc = _desc;
+        iconUri = _iconUri;
+    }
 
     public override float Duration => CallOnService<float>("getDuration");
     public override bool IsPaused => CallOnService<bool>("isPaused");

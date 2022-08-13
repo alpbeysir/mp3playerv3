@@ -9,6 +9,8 @@ public class WindowsPlayer : AudioPlayer
 {
     private WaveOutEvent output = new WaveOutEvent();
     private MediaFoundationReader reader;
+
+    private Mutex fileLock = new Mutex();
     
     public override float CurPos
     { 
@@ -23,6 +25,8 @@ public class WindowsPlayer : AudioPlayer
         get => "";
         set
         {
+            fileLock.WaitOne();
+            
             //Stop previous playback
             if (reader != null)
             {
@@ -44,8 +48,11 @@ public class WindowsPlayer : AudioPlayer
             output.PlaybackStopped += StoppedCallback;
 
             output.Play();
+        
             OnPrepared?.Invoke();
             OnStart?.Invoke();
+
+            fileLock.ReleaseMutex();
         }
     }
 

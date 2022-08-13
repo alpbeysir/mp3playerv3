@@ -65,6 +65,6 @@ public class Playlist
         currentIndex = data.IndexOf(id);
     }
 
-    public static bool Load(string guid, out Playlist playlist) => Utils.FileUtil.Read(Utils.PlaylistPath + guid, out playlist);
-    public static void Save(Playlist playlist) => Utils.FileUtil.Write(playlist, Utils.PlaylistPath + playlist.Guid);
+    public static bool Load(string guid, out Playlist playlist) => Utils.FileUtil.ReadBinary(Utils.PlaylistPath + guid, out playlist);
+    public static void Save(Playlist playlist) => Utils.FileUtil.WriteBinary(playlist, Utils.PlaylistPath + playlist.Guid);
 }

@@ -17,7 +17,7 @@ public class PlayerManager : UIScreen
     [SerializeField] private Slider seekBar;
     [SerializeField] private GameObject playIcon, pauseIcon;
 
-    private static AudioPlayer player;
+    private AudioPlayer player;
 
     public static Playlist playlist = new();
 
@@ -27,8 +27,6 @@ public class PlayerManager : UIScreen
     private float duration;
     private bool uiUpdateRequested;
     private bool playerControlsEnabled;
-
-    private Thread playerThread;
 
     public void Start()
     {
@@ -42,6 +40,18 @@ public class PlayerManager : UIScreen
         AudioPlayer.OnResume += OnPlayerResume;
         AudioPlayer.OnPause += OnPlayerPause;
         AudioPlayer.OnPrepared += OnPlayerPrepared;
+
+        //DownloadManager.OnDownloadComplete += OnDownloadComplete;
+    }
+
+    private void OnDownloadComplete(string id)
+    {
+        if (currentInfo != null && currentInfo.metadata.id == id)
+        {
+            var posCache = player.CurPos;
+            player.Pause();
+            StartPlayerThread();
+        }
     }
 
     public override void Show()
@@ -111,48 +121,42 @@ public class PlayerManager : UIScreen
         playerControlsEnabled = true;
         uiUpdateRequested = true;
     }
+
+    private CancellationTokenSource cts = new();
     public void StartPlayerThread()
     {
-        playerThread?.Abort();
-        playerThread = new Thread(UpdatePlayerState);
-        playerThread.Start();
+        cts.Cancel();
+        cts = new CancellationTokenSource();
+        Task.Run(() => UpdatePlayerState(cts.Token));
     }
-    
-    private void UpdatePlayerState()
+
+    private void UpdatePlayerState(CancellationToken token)
     {
         if (playlist.Length == 0) return;
 
         try
         {
             playerControlsEnabled = false;
-            
-            currentInfo = MediaInfo.Creator(Cache.GetOrCreate<Metadata>(playlist.GetCurrent()).Result).Result;
-            if (currentInfo == null) throw new Exception("currentInfo cannot be null!");
-            
+
+            token.ThrowIfCancellationRequested();
+
+            var meta = Cache.GetOrCreate<Metadata>(playlist.GetCurrent()).Result;
+
+            currentInfo = MediaInfo.Creator(meta, token).Result;
+
+            token.ThrowIfCancellationRequested();
+
             uiUpdateRequested = true;
 
             if (Application.platform == RuntimePlatform.Android)
-            {
-                //Need to attach to JVM before calling Java code
-                AndroidJNI.AttachCurrentThread();
-
-                AndroidPlayer.title = currentInfo.metadata.title;
-                AndroidPlayer.desc = currentInfo.metadata.channelName;
-                AndroidPlayer.iconUri = currentInfo.metadata.sdThumbnailUrl;
-            }
+                AndroidPlayer.SetNotifData(currentInfo.metadata.title, currentInfo.metadata.channelName, currentInfo.metadata.sdThumbnailUrl);
 
             player.CurFile = currentInfo.mediaUri;
         }
         catch (Exception e)
         {
-            Debug.LogError("An error occured in SetMediaInfo!\n" + e.Message);
+            Debug.LogError("An error occurred in UpdatePlayerStateAsync!\n" + e.ToString());
             playerControlsEnabled = true;
-
-        }
-        finally
-        {
-            if (Application.platform == RuntimePlatform.Android)
-                AndroidJNI.DetachCurrentThread();
         }
     }
 
@@ -166,8 +170,7 @@ public class PlayerManager : UIScreen
     {
         if (currentInfo == null) return;
         
-        thumbnail.ShowLoading(null);
-        _ = thumbnail.Set(currentInfo.metadata.sdThumbnailUrl);
+        _ = thumbnail.Set(currentInfo.metadata.hdThumbnailUrl);
         titleDisplay.text = currentInfo.metadata.title;
         channelDisplay.text = currentInfo.metadata.channelName;
         lastInfo = currentInfo;
@@ -191,6 +194,7 @@ public class PlayerManager : UIScreen
     public void OnDestroy()
     {
         player.Dispose();
+        playlist = new();
         currentInfo = null;
         lastInfo = null;
     }

@@ -8,12 +8,16 @@ using YoutubeExplode.Videos.Streams;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Cryptography;
+using System.Text.Json;
+using System.Linq;
+using System.Collections.Generic;
+using System.Threading;
 
 public static class Utils
 {
     public static class FileUtil
     {
-        public static bool Read<T>(string path, out T result)
+        public static bool ReadBinary<T>(string path, out T result)
         {
             BinaryFormatter bf = new BinaryFormatter();
 
@@ -30,15 +34,39 @@ public static class Utils
             }
         }
 
-        public static void Write<T>(T obj, string path)
+        public static void WriteBinary<T>(T obj, string path)
         {
             BinaryFormatter bf = new BinaryFormatter();
 
-            if (!Directory.Exists(Path.GetDirectoryName(path))) Directory.CreateDirectory(Path.GetDirectoryName(path));
+            CreateDirFromPath(path);
 
             using FileStream fs = System.IO.File.Create(path);
             bf.Serialize(fs, obj);
             //Debug.Log("Wrote file: " + Path.GetFileName(path));
+        }
+
+        static JsonSerializerOptions options = new JsonSerializerOptions { IncludeFields = true, WriteIndented = true };
+
+        public static bool ReadJson<T>(string path, out T result)
+        {
+            try
+            {
+                result = JsonSerializer.Deserialize<T>(File.ReadAllText(path), options);
+                return true;
+            }
+            catch
+            {
+                result = default;
+                return false;
+            }
+        }
+
+        public static void WriteJson<T>(T obj, string path)
+        {
+            CreateDirFromPath(path);
+
+            string jsonStr = JsonSerializer.Serialize(obj, options);
+            File.WriteAllText(path, jsonStr);
         }
     }
     
@@ -89,11 +117,16 @@ public static class Utils
                 return www.downloadHandler.data;
         }
     }
-
-
-    
+  
     private static bool TryGetExistingMedia(string id, out string path)
     {
+        if (DownloadManager.IsDownloading(id))
+        {
+            Debug.Log("Downloading");
+            path = "";
+            return false;
+        }
+        
         Container[] possibleContainers = { Container.WebM, Container.Mp3, Container.Mp4, Container.Tgpp };
         string pathWithoutExt = MediaPath + id;
         foreach (var c in possibleContainers)
@@ -104,16 +137,28 @@ public static class Utils
         path = "";
         return false;
     }
-    
-    public static async Task<string> GetMediaUri(string id)
+
+    public static async Task<string> GetMediaUri(string id, CancellationToken token)
     {
         string path;
-        if (TryGetExistingMedia(id, out path)) return path;
+        if (TryGetExistingMedia(id, out path))
+        {
+            Debug.Log(string.Format("Found existing media: {0}", path));
+            return path;
+        }
         else
         {
-            var streamInfo = (await Youtube.Instance.Videos.Streams.GetManifestAsync(id)).GetAudioOnlyStreams().TryGetWithHighestBitrate();
+            StreamManifest streamManifest = await Youtube.Instance.Videos.Streams.GetManifestAsync(id, token);
+            var streamInfo = streamManifest.GetAudioOnlyStreams().OrderBy(s => s.Bitrate).TryGetWithHighestBitrate();
+            _ = DownloadManager.DownloadAsync(id, (AudioOnlyStreamInfo)streamInfo);
             return streamInfo.Url;
         }
+    }
+
+    public static void CreateDirFromPath(string path)
+    {
+        var dirName = Path.GetDirectoryName(path);
+        if (!Directory.Exists(dirName)) Directory.CreateDirectory(dirName);
     }
     public static string GetUniqueKey(int size = 24, string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
     {

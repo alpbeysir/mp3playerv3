@@ -42,6 +42,7 @@ namespace YoutubeExplode.Videos
             );
         }
 
+        [UnityEngine.Scripting.Preserve]
         public async Task<PlayerResponseExtractor> GetPlayerResponseAsync(
             VideoId videoId,
             bool isEmbedded,
@@ -88,6 +89,7 @@ namespace YoutubeExplode.Videos
             return playerResponse;
         }
 
+        [UnityEngine.Scripting.Preserve]
         public async Task<PlayerResponseExtractor> GetPlayerResponseAsync(
             VideoId videoId,
             CancellationToken cancellationToken = default) =>

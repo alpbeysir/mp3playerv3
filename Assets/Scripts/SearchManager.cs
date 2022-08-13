@@ -57,7 +57,7 @@ public class SearchManager : UIScreen
         curLoadedResults = 0;
         listView.RowCount = maxResults;
         listView.Refresh();
-        
+
         listView.gameObject.SetActive(false);
         loadingView.gameObject.SetActive(true);
         
@@ -123,18 +123,6 @@ public class SearchManager : UIScreen
         listView.gameObject.SetActive(true);
         loadingView.gameObject.SetActive(false);
     }
-
-    private async UniTask OnSearchResultObtained(int index)
-    {
-        await UniTask.SwitchToMainThread();
-        var info = listView.GetRowItem(index) as VideoInfo;
-        if (searchResults.ContainsKey(index))
-        lock (searchResults)
-        {
-            if (info != null)
-                info.Populate(Metadata.CreatorFromSearch(searchResults[index]), (m) => PlayerManager.playlist.Add(m.id));
-        }
-    }
     private void PopulateDelegate(RecyclingListViewItem item, int index)
     {
         if (searchResults.ContainsKey(index))
@@ -150,7 +138,6 @@ public class SearchManager : UIScreen
     {
         cts.Cancel();
         cts = new CancellationTokenSource();
-        Resources.UnloadUnusedAssets();
 
         searchResults.Clear();
         curLoadedResults = 0;
