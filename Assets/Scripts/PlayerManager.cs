@@ -42,17 +42,19 @@ public class PlayerManager : UIScreen
         AudioPlayer.OnPrepared += OnPlayerPrepared;
 
         //DownloadManager.OnDownloadComplete += OnDownloadComplete;
+        if (!Playlist.Load("main", out playlist)) playlist = new();
+        StartPlayerThread();
     }
 
-    private void OnDownloadComplete(string id)
-    {
-        if (currentInfo != null && currentInfo.metadata.id == id)
-        {
-            var posCache = player.CurPos;
-            player.Pause();
-            StartPlayerThread();
-        }
-    }
+    //private void OnDownloadComplete(string id)
+    //{
+    //    if (currentInfo != null && currentInfo.metadata.id == id)
+    //    {
+    //        var posCache = player.CurPos;
+    //        player.Pause();
+    //        StartPlayerThread();
+    //    }
+    //}
 
     public override void Show()
     {
@@ -119,6 +121,8 @@ public class PlayerManager : UIScreen
     {
         duration = player.Duration;
         playerControlsEnabled = true;
+
+        //may be unnecessary
         uiUpdateRequested = true;
     }
 
@@ -127,35 +131,32 @@ public class PlayerManager : UIScreen
     {
         cts.Cancel();
         cts = new CancellationTokenSource();
-        Task.Run(() => UpdatePlayerState(cts.Token));
+        Task.Run(() => UpdatePlayerState(cts.Token), cts.Token);
     }
 
     private void UpdatePlayerState(CancellationToken token)
     {
         if (playlist.Length == 0) return;
 
+        token.ThrowIfCancellationRequested();
+
         try
         {
             playerControlsEnabled = false;
 
-            token.ThrowIfCancellationRequested();
-
-            var meta = Cache.GetOrCreate<Metadata>(playlist.GetCurrent()).Result;
-
+            var meta = Cache.GetOrCreate<Metadata>(playlist.GetCurrent(), token).Result;
             currentInfo = MediaInfo.Creator(meta, token).Result;
-
-            token.ThrowIfCancellationRequested();
 
             uiUpdateRequested = true;
 
             if (Application.platform == RuntimePlatform.Android)
                 AndroidPlayer.SetNotifData(currentInfo.metadata.title, currentInfo.metadata.channelName, currentInfo.metadata.sdThumbnailUrl);
 
-            player.CurFile = currentInfo.mediaUri;
+            player.CurFile = currentInfo.mediaUri;      
         }
         catch (Exception e)
         {
-            Debug.LogError("An error occurred in UpdatePlayerStateAsync!\n" + e.ToString());
+            Debug.LogException(e);
             playerControlsEnabled = true;
         }
     }

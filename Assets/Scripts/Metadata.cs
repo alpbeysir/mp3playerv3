@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using UnityEngine;
+
 [Serializable]
 public class Metadata : CacheObject<Metadata>
 {
@@ -14,29 +16,6 @@ public class Metadata : CacheObject<Metadata>
 
     public Metadata() { }
     public Metadata(string id) : base(id) { }
-
-    //[UnityEngine.Scripting.Preserve]
-    //public static async Task<Metadata> Creator(string id)
-    //{
-    //    var video = await Youtube.Instance.Videos.GetAsync(id);
-    //    Metadata meta = new Metadata(video.Id);
-    //    meta.title = video.Title;
-    //    meta.channelName = video.Author.ChannelTitle;
-    //    meta.duration = (TimeSpan)video.Duration;
-    //    meta.uploadDate = video.UploadDate;
-
-    //    YoutubeExplode.Common.Thumbnail lowest = video.Thumbnails[0], highest = video.Thumbnails[0];
-    //    foreach (var t in video.Thumbnails)
-    //    {
-    //        if (lowest.Resolution.Area > t.Resolution.Area) lowest = t;
-    //        if (highest.Resolution.Area < t.Resolution.Area) highest = t;
-    //    }
-        
-    //    meta.sdThumbnailUrl = lowest.Url;
-    //    meta.hdThumbnailUrl = highest.Url;
-
-    //    return meta;
-    //}
 
     public static Metadata CreatorFromSearch(YoutubeExplode.Search.VideoSearchResult sr)
     {
@@ -51,12 +30,15 @@ public class Metadata : CacheObject<Metadata>
 
     public override async Task<Metadata> Creator(string id, CancellationToken token)
     {
-        var video = await Youtube.Instance.Videos.GetAsync(id);
+        var video = await Youtube.Instance.Videos.GetAsync(id, token);
         Metadata meta = new Metadata(video.Id);
+        meta.id = id;
         meta.title = video.Title;
         meta.channelName = video.Author.ChannelTitle;
         meta.duration = (TimeSpan)video.Duration;
         meta.uploadDate = video.UploadDate;
+
+        token.ThrowIfCancellationRequested();
 
         YoutubeExplode.Common.Thumbnail lowest = video.Thumbnails[0], highest = video.Thumbnails[0];
         foreach (var t in video.Thumbnails)
@@ -67,7 +49,6 @@ public class Metadata : CacheObject<Metadata>
 
         meta.sdThumbnailUrl = lowest.Url;
         meta.hdThumbnailUrl = highest.Url;
-
         return meta;
     }
 }

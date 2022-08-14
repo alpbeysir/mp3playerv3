@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace Mp3Player
 {
@@ -13,17 +14,12 @@ namespace Mp3Player
  
         public Thumbnail(string id) : base(id) { }
 
-        //[UnityEngine.Scripting.Preserve]
-        //public static async Task<Thumbnail> Creator(string id)
-        //{
-        //    Thumbnail thumbnail = new Thumbnail(id);
-        //    thumbnail.data = await Utils.DownloadFromURL(id);
-        //    return thumbnail;
-        //}
-
         public override async Task<Thumbnail> Creator(string id, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
             Thumbnail thumbnail = new Thumbnail(id);
+            thumbnail.id = id;
             thumbnail.data = await Utils.DownloadFromURL(id);
             return thumbnail;
         }

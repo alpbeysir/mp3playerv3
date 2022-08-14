@@ -14,8 +14,8 @@ public class NetworkedSprite : MonoBehaviour
         //Set loading state
         if (image.sprite != loadingSprite)
         {
+            DestroyImmediate(image.sprite.texture, true);
             DestroyImmediate(image.sprite, true);
-            //DestroyImmediate(image.sprite.texture, true);
             image.sprite = loadingSprite;
  
         }

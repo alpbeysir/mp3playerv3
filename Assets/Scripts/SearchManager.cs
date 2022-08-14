@@ -44,7 +44,7 @@ public class SearchManager : UIScreen
             {
                 var info = item as VideoInfo;
                 if (info != null)
-                    info.Populate(Metadata.CreatorFromSearch(searchResults[idx]), (m) => PlayerManager.playlist.Add(m.id));
+                    info.Populate(Metadata.CreatorFromSearch(searchResults[idx]), OnClick);
             }
         }
     }
@@ -93,7 +93,7 @@ public class SearchManager : UIScreen
         catch (Exception e)
         {
             if (!e.IsOperationCanceledException())
-                Debug.LogError("Search encountered error: " + e.Message + e.StackTrace);
+                Debug.LogException(e);
             else
                 Debug.Log("Search for " + query + " was canceled");           
         }
@@ -126,12 +126,18 @@ public class SearchManager : UIScreen
     private void PopulateDelegate(RecyclingListViewItem item, int index)
     {
         if (searchResults.ContainsKey(index))
-            (item as VideoInfo).Populate(Metadata.CreatorFromSearch(searchResults[index]), (m) => PlayerManager.playlist.Add(m.id));
+            (item as VideoInfo).Populate(Metadata.CreatorFromSearch(searchResults[index]), OnClick);
+    }
+
+    private void OnClick(Metadata meta)
+    {
+        PlayerManager.playlist.Add(meta.id);
     }
 
     public override void Show()
     {
-        
+        if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
+            searchBar.ActivateInputField();
     }
 
     public override void Hide()

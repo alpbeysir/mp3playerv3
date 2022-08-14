@@ -48,7 +48,7 @@ public static class DownloadManager
         {
             if (!download.cts.Token.IsCancellationRequested)
             {
-                Debug.LogError(e.ToString());
+                Debug.LogException(e);
                 OnDownloadFailed.Invoke(id);
             }
         }

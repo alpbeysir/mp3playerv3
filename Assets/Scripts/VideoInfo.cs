@@ -32,7 +32,7 @@ public class VideoInfo : RecyclingListViewItem, IPointerClickHandler
         infoParent.SetActive(true);
         _ = thumbnailDisplay.Set(metadata.sdThumbnailUrl);
         titleDisplay.text = RemoveUnsupportedChars(metadata.title);
-        extraInfoDisplay.text = RemoveUnsupportedChars(string.Format("{0} • {1}", metadata.channelName, metadata.duration.ToString("hh\\:mm\\:ss")));
+        extraInfoDisplay.text = RemoveUnsupportedChars(string.Format("{0} • {1}", metadata.channelName, metadata.duration.ToString("mm\\:ss")));
 
     }
 

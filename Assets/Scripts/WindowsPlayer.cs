@@ -43,7 +43,7 @@ public class WindowsPlayer : AudioPlayer
             
             reader = new MediaFoundationReader(value);
 
-            output = new WaveOutEvent();
+            //output = new WaveOutEvent();
             output.Init(reader);
             output.PlaybackStopped += StoppedCallback;
 

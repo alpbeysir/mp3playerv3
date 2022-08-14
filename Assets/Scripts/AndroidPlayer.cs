@@ -24,7 +24,7 @@ public class AndroidPlayer : AudioPlayer
     {
         get => _curFile;
         set
-        {          
+        {
             _curFile = value;
 
             AndroidJNI.AttachCurrentThread();

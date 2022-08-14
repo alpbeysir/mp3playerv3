@@ -99,7 +99,7 @@ public static class Utils
         {
             tex.LoadImage(data);
         }
-        var sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100, 0, SpriteMeshType.FullRect, Vector4.one, false);
+        var sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), 1000, 0, SpriteMeshType.FullRect, Vector4.one, false);
         return sprite;
     }
 
