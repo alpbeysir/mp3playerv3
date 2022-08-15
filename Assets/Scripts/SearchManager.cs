@@ -12,6 +12,7 @@ public class SearchManager : UIScreen
 {
     [SerializeField] private RecyclingListView listView;
     [SerializeField] private GameObject loadingView;
+    [SerializeField] private GameObject searchSomethingView;
     [SerializeField] private TMPro.TMP_InputField searchBar;
     [SerializeField] private int disableLoadThreshold;
     
@@ -31,7 +32,7 @@ public class SearchManager : UIScreen
     private void Start()
     {
         listView.ItemCallback += PopulateDelegate;
-        listView.RowCount = maxResults;
+        listView.RowCount = 0;
     }
 
     private void Update()
@@ -44,7 +45,7 @@ public class SearchManager : UIScreen
             {
                 var info = item as VideoInfo;
                 if (info != null)
-                    info.Populate(Metadata.CreatorFromSearch(searchResults[idx]), OnClick);
+                    info.Populate(Track.CreatorFromSearch(searchResults[idx]), OnClick);
             }
         }
     }
@@ -60,6 +61,7 @@ public class SearchManager : UIScreen
 
         listView.gameObject.SetActive(false);
         loadingView.gameObject.SetActive(true);
+        searchSomethingView.SetActive(false);
         
         await UniTask.SwitchToThreadPool();
         searchEnumerator = Youtube.Instance.Search.GetVideosAsync(query, token).GetAsyncEnumerator();      
@@ -106,7 +108,17 @@ public class SearchManager : UIScreen
 
     public async UniTask SearchInit()
     {
-        if (searchBar.text.Length < 1 || cts.IsCancellationRequested) return;
+        if (searchBar.text.Length < 1 || cts.IsCancellationRequested) 
+        {
+            if (searchBar.text.Length == 0)
+            {
+                await DisableLoadingView();
+                listView.gameObject.SetActive(false);
+                searchSomethingView.gameObject.SetActive(true);
+            }
+            Clear();
+            return;
+        }
 
         cts.Cancel();
         await UniTask.WaitUntil(() => !searching);
@@ -121,17 +133,27 @@ public class SearchManager : UIScreen
     {
         await UniTask.SwitchToMainThread();
         listView.gameObject.SetActive(true);
-        loadingView.gameObject.SetActive(false);
+        loadingView.SetActive(false);
     }
     private void PopulateDelegate(RecyclingListViewItem item, int index)
     {
+        (item as VideoInfo).ShowLoading();
+
         if (searchResults.ContainsKey(index))
-            (item as VideoInfo).Populate(Metadata.CreatorFromSearch(searchResults[index]), OnClick);
+            (item as VideoInfo).Populate(Track.CreatorFromSearch(searchResults[index]), OnClick);
     }
 
-    private void OnClick(Metadata meta)
+    private void OnClick(Track meta)
     {
         PlayerManager.playlist.Add(meta.id);
+    }
+
+    private void Clear()
+    {
+        searchResults.Clear();
+        curLoadedResults = 0;
+        listView.RowCount = 0;
+        listView.Refresh();
     }
 
     public override void Show()
@@ -142,15 +164,17 @@ public class SearchManager : UIScreen
 
     public override void Hide()
     {
+        //cts.Cancel();
+        //cts = new CancellationTokenSource();
+
+        //Clear();
+
+        //listView.gameObject.SetActive(false);
+        //loadingView.SetActive(false);
+    }
+
+    private void OnDestroy()
+    {
         cts.Cancel();
-        cts = new CancellationTokenSource();
-
-        searchResults.Clear();
-        curLoadedResults = 0;
-        listView.RowCount = maxResults;
-        listView.Refresh();
-
-        listView.gameObject.SetActive(false);
-        loadingView.gameObject.SetActive(false);
     }
 }

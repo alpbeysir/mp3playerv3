@@ -4,14 +4,10 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 using WebP;
-using YoutubeExplode.Videos.Streams;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Cryptography;
 using System.Text.Json;
-using System.Linq;
-using System.Collections.Generic;
-using System.Threading;
 
 public static class Utils
 {
@@ -23,7 +19,7 @@ public static class Utils
 
             try
             {
-                using FileStream fs = System.IO.File.Open(path, FileMode.Open);
+                using FileStream fs = File.Open(path, FileMode.Open);
                 result = (T)bf.Deserialize(fs);
                 return true;
             }
@@ -40,12 +36,17 @@ public static class Utils
 
             CreateDirFromPath(path);
 
-            using FileStream fs = System.IO.File.Create(path);
+            using FileStream fs = File.Create(path);
             bf.Serialize(fs, obj);
-            //Debug.Log("Wrote file: " + Path.GetFileName(path));
         }
 
-        static JsonSerializerOptions options = new JsonSerializerOptions { IncludeFields = true, WriteIndented = true };
+        static JsonSerializerOptions options = new JsonSerializerOptions
+        { 
+            IncludeFields = true,
+            #if UNITY_EDITOR
+            WriteIndented = true
+            #endif 
+        };
 
         public static bool ReadJson<T>(string path, out T result)
         {
@@ -118,48 +119,12 @@ public static class Utils
         }
     }
   
-    private static bool TryGetExistingMedia(string id, out string path)
-    {
-        if (DownloadManager.IsDownloading(id))
-        {
-            Debug.Log("Downloading");
-            path = "";
-            return false;
-        }
-        
-        Container[] possibleContainers = { Container.WebM, Container.Mp3, Container.Mp4, Container.Tgpp };
-        string pathWithoutExt = MediaPath + id;
-        foreach (var c in possibleContainers)
-        {
-            path = string.Format("{0}.{1}", pathWithoutExt, c.Name);
-            if (File.Exists(path)) return true;
-        }
-        path = "";
-        return false;
-    }
-
-    public static async Task<string> GetMediaUri(string id, CancellationToken token)
-    {
-        string path;
-        if (TryGetExistingMedia(id, out path))
-        {
-            Debug.Log(string.Format("Found existing media: {0}", path));
-            return path;
-        }
-        else
-        {
-            StreamManifest streamManifest = await Youtube.Instance.Videos.Streams.GetManifestAsync(id, token);
-            var streamInfo = streamManifest.GetAudioOnlyStreams().OrderBy(s => s.Bitrate).TryGetWithHighestBitrate();
-            _ = DownloadManager.DownloadAsync(id, (AudioOnlyStreamInfo)streamInfo);
-            return streamInfo.Url;
-        }
-    }
-
     public static void CreateDirFromPath(string path)
     {
         var dirName = Path.GetDirectoryName(path);
         if (!Directory.Exists(dirName)) Directory.CreateDirectory(dirName);
     }
+
     public static string GetUniqueKey(int size = 24, string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
     {
         using (var crypto = new RNGCryptoServiceProvider())

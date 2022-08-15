@@ -25,8 +25,12 @@ public static class DownloadManager
         return downloads.ContainsKey(id);
     }
 
-    public static async Task DownloadAsync(string id, AudioOnlyStreamInfo streamInfo)
+    public static async Task DownloadAsync(Track track, AudioOnlyStreamInfo streamInfo = null)
     {
+        string id = track.id;
+        string temp;
+        if (downloads.ContainsKey(id) || track.TryGetExistingMedia(out temp)) return;
+        
         downloads.Add(id, (new(), new()));
         var download = downloads[id];
 
@@ -37,6 +41,7 @@ public static class DownloadManager
             Stopwatch timer = new();
             timer.Start();
 
+            if (streamInfo == null) streamInfo = await track.GetStreamInfoAsync(download.cts.Token);
             var path = Utils.MediaPath + string.Format("{0}.{1}", id, streamInfo.Container.Name);
             Utils.CreateDirFromPath(path);
             await Youtube.Instance.Videos.Streams.DownloadAsync(streamInfo, path, download.p, download.cts.Token);

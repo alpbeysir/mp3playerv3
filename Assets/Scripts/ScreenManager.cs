@@ -22,7 +22,7 @@ public class ScreenManager : Singleton<ScreenManager>
         _ = Utils.RootPath;
 
         Application.targetFrameRate = 144;
-        //ApplicationChrome.statusBarState = ApplicationChrome.States.Visible;
+        ApplicationChrome.statusBarState = ApplicationChrome.States.TranslucentOverContent;
         ApplicationChrome.navigationBarState = ApplicationChrome.States.Visible;
     }
     void Start()
@@ -43,7 +43,8 @@ public class ScreenManager : Singleton<ScreenManager>
         var cur = history.Peek();
 
         cur.gameObject.SetActive(true);
-        
+
+        prev.gameObject.SetActive(false);
         //prev.transform.DOLocalMoveX(Screen.width * 2, animSpeed).OnComplete(() => { prev.transform.DOLocalMoveX(0f, 0f).OnComplete(() => { prev.gameObject.SetActive(false); }); });
         prev.Hide();
 
@@ -63,6 +64,7 @@ public class ScreenManager : Singleton<ScreenManager>
 
         history.Push(screen);
         screen.gameObject.SetActive(true);
+        toBeHidden?.gameObject.SetActive(false);
         //screen.transform.DOLocalMoveX(Screen.width, 0f).OnComplete(() => { screen.transform.DOLocalMoveX(0f, animSpeed).OnComplete(() => { toBeHidden?.gameObject.SetActive(false); });  });
         screen.Show();
         Log("Showing screen " + screen.name);

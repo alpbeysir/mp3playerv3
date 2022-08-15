@@ -7,7 +7,7 @@ using NAudio.Wave;
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
 public class WindowsPlayer : AudioPlayer
 {
-    private WaveOutEvent output = new WaveOutEvent();
+    private WaveOutEvent output;
     private MediaFoundationReader reader;
 
     private Mutex fileLock = new Mutex();
@@ -39,11 +39,10 @@ public class WindowsPlayer : AudioPlayer
                 output.PlaybackStopped -= StoppedCallback;
                 output.Stop();
             }
-
-            
+          
             reader = new MediaFoundationReader(value);
 
-            //output = new WaveOutEvent();
+            output = new WaveOutEvent();
             output.Init(reader);
             output.PlaybackStopped += StoppedCallback;
 

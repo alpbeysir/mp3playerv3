@@ -129,6 +129,7 @@ public class PlayerManager : UIScreen
     private CancellationTokenSource cts = new();
     public void StartPlayerThread()
     {
+        //if (cts.IsCancellationRequested) return;
         cts.Cancel();
         cts = new CancellationTokenSource();
         Task.Run(() => UpdatePlayerState(cts.Token), cts.Token);
@@ -137,22 +138,23 @@ public class PlayerManager : UIScreen
     private void UpdatePlayerState(CancellationToken token)
     {
         if (playlist.Length == 0) return;
-
         token.ThrowIfCancellationRequested();
 
         try
         {
             playerControlsEnabled = false;
 
-            var meta = Cache.GetOrCreate<Metadata>(playlist.GetCurrent(), token).Result;
+            var meta = Cache.GetOrCreate<Track>(playlist.GetCurrent(), token).Result;
             currentInfo = MediaInfo.Creator(meta, token).Result;
 
             uiUpdateRequested = true;
 
             if (Application.platform == RuntimePlatform.Android)
-                AndroidPlayer.SetNotifData(currentInfo.metadata.title, currentInfo.metadata.channelName, currentInfo.metadata.sdThumbnailUrl);
+                AndroidPlayer.SetNotifData(currentInfo.metadata.Title, currentInfo.metadata.ChannelName, currentInfo.metadata.LowResThumbnailUrl);
 
-            player.CurFile = currentInfo.mediaUri;      
+            token.ThrowIfCancellationRequested();
+
+            player.CurFile = currentInfo.mediaUri;
         }
         catch (Exception e)
         {
@@ -171,9 +173,9 @@ public class PlayerManager : UIScreen
     {
         if (currentInfo == null) return;
         
-        _ = thumbnail.Set(currentInfo.metadata.hdThumbnailUrl);
-        titleDisplay.text = currentInfo.metadata.title;
-        channelDisplay.text = currentInfo.metadata.channelName;
+        _ = thumbnail.Set(currentInfo.metadata.HighResThumbnailUrl);
+        titleDisplay.text = currentInfo.metadata.Title;
+        channelDisplay.text = currentInfo.metadata.ChannelName;
         lastInfo = currentInfo;
     }
 

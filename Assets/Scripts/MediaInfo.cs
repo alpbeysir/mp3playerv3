@@ -3,14 +3,14 @@ using System.Threading.Tasks;
 
 public class MediaInfo
 {
-    public Metadata metadata;
+    public Track metadata;
     public string mediaUri;
     
-    public static async Task<MediaInfo> Creator(Metadata meta, CancellationToken token)
+    public static async Task<MediaInfo> Creator(Track meta, CancellationToken token = default)
     {
         MediaInfo mediaInfo = new MediaInfo();
         mediaInfo.metadata = meta;
-        mediaInfo.mediaUri = await Utils.GetMediaUri(mediaInfo.metadata.id, token);
+        mediaInfo.mediaUri = await meta.GetMediaUri(token);
         return mediaInfo;
     } 
 }

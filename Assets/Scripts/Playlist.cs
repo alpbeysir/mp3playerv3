@@ -15,6 +15,7 @@ public class Playlist
 
     public void Add(string id)
     {
+        if (isIn.ContainsKey(id)) return;
         data.Add(id);
         isIn.Add(id, data.Count - 1);
         Save(this);
