@@ -604,7 +604,7 @@
   <change>
     <version>1.0.100.0</version>
     <date>8 Mar 2007</date>
-    <desc>WaveMixerStream32 updated ready to support dynamic adding of streams</desc>
+    <desc>WaveMixerStream32 updated ready to support string adding of streams</desc>
     <desc>Some bugfixes to WaveOut to support auto stop mode again</desc>
   </change>
   <change>

@@ -13,8 +13,11 @@ public class SearchManager : UIScreen
     [SerializeField] private RecyclingListView listView;
     [SerializeField] private GameObject loadingView;
     [SerializeField] private GameObject searchSomethingView;
+    [SerializeField] private GameObject failedView;
     [SerializeField] private TMPro.TMP_InputField searchBar;
     [SerializeField] private int disableLoadThreshold;
+
+    [SerializeField] private SwipeActionData leftSwipeActionData, rightSwipeActionData;
     
     public int maxResults;
     public int curLoadedResults;
@@ -28,24 +31,56 @@ public class SearchManager : UIScreen
     private Queue<int> toBeUpdated = new Queue<int>();
 
     private IAsyncEnumerator<YoutubeExplode.Search.VideoSearchResult> searchEnumerator;
-    
+
+    private Playlist targetPlaylist;
+
+    public override void Show(params object[] args)
+    {
+        //Get playlist if adding songs
+        if (args.Length > 0)
+        {
+            if (targetPlaylist == null)
+            {
+                Clear();
+                searchBar.SetTextWithoutNotify("");
+            }
+            targetPlaylist = args[0] as Playlist;
+            searchBar.placeholder.GetComponent<TMPro.TextMeshProUGUI>().text = "Search for songs to add";
+        }
+        else
+        {
+            if (targetPlaylist != null)
+            {
+                Clear();
+                searchBar.SetTextWithoutNotify("");
+            }
+            searchBar.placeholder.GetComponent<TMPro.TextMeshProUGUI>().text = "Search YouTube";
+        }
+
+        if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
+            searchBar.ActivateInputField();
+    }
+
     private void Start()
     {
         listView.ItemCallback += PopulateDelegate;
         listView.RowCount = 0;
+
+        leftSwipeActionData.onActivate += OnLeftSwipe;
+        rightSwipeActionData.onActivate += OnRightSwipe;
     }
 
     private void Update()
     {
         if (toBeUpdated.Count > 0)
         {
-            var idx = toBeUpdated.Dequeue();
-            var item = listView.GetRowItem(idx);
+            var index = toBeUpdated.Dequeue();
+            var item = listView.GetRowItem(index);
             if (item)
             {
-                var info = item as VideoInfo;
+                var info = item as TrackInfo;
                 if (info != null)
-                    info.Populate(Track.CreatorFromSearch(searchResults[idx]), OnClick);
+                    InternalPopulate(info, index);
             }
         }
     }
@@ -59,19 +94,20 @@ public class SearchManager : UIScreen
         listView.RowCount = maxResults;
         listView.Refresh();
 
-        listView.gameObject.SetActive(false);
         loadingView.gameObject.SetActive(true);
+        listView.gameObject.SetActive(false);
         searchSomethingView.SetActive(false);
-        
+        failedView.SetActive(false);
+
         await UniTask.SwitchToThreadPool();
-        searchEnumerator = Youtube.Instance.Search.GetVideosAsync(query, token).GetAsyncEnumerator();      
+        searchEnumerator = Youtube.Instance.Search.GetVideosAsync(query, token).GetAsyncEnumerator();
         try
         {
             //Search
             while (curLoadedResults < maxResults)
             {
                 token.ThrowIfCancellationRequested();
-                
+
                 if (!await searchEnumerator.MoveNextAsync())
                 {
                     await UniTask.SwitchToMainThread();
@@ -83,11 +119,11 @@ public class SearchManager : UIScreen
                     _ = DisableLoadingView();
 
 
-                if (searchEnumerator.Current != null)
+                //Check duration to eliminate livestreams
+                if (searchEnumerator.Current != null && searchEnumerator.Current.Duration != null)
                 {
                     searchResults[curLoadedResults] = searchEnumerator.Current;
                     toBeUpdated.Enqueue(curLoadedResults);
-                    //_ = OnSearchResultObtained(curLoadedResults);
                     curLoadedResults++;
                 }
             }
@@ -95,7 +131,10 @@ public class SearchManager : UIScreen
         catch (Exception e)
         {
             if (!e.IsOperationCanceledException())
+            {
                 Debug.LogException(e);
+                _ = ShowFailedView();
+            }
             else
                 Debug.Log("Search for " + query + " was canceled");           
         }
@@ -114,7 +153,8 @@ public class SearchManager : UIScreen
             {
                 await DisableLoadingView();
                 listView.gameObject.SetActive(false);
-                searchSomethingView.gameObject.SetActive(true);
+                searchSomethingView.SetActive(true);
+                failedView.SetActive(false);
             }
             Clear();
             return;
@@ -126,7 +166,6 @@ public class SearchManager : UIScreen
         _ = Search(searchBar.text, cts.Token);
     }
 
-
     public void OnSearchBarChanged() => _ = SearchInit();
 
     public async UniTask DisableLoadingView()
@@ -134,18 +173,68 @@ public class SearchManager : UIScreen
         await UniTask.SwitchToMainThread();
         listView.gameObject.SetActive(true);
         loadingView.SetActive(false);
-    }
-    private void PopulateDelegate(RecyclingListViewItem item, int index)
-    {
-        (item as VideoInfo).ShowLoading();
-
-        if (searchResults.ContainsKey(index))
-            (item as VideoInfo).Populate(Track.CreatorFromSearch(searchResults[index]), OnClick);
+        failedView.SetActive(false);
     }
 
-    private void OnClick(Track meta)
+    public async UniTask ShowFailedView()
     {
-        PlayerManager.playlist.Add(meta.id);
+        await UniTask.SwitchToMainThread();
+        listView.gameObject.SetActive(false);
+        loadingView.SetActive(false);
+        searchSomethingView.SetActive(false);
+        failedView.SetActive(true);
+    }
+
+    private void PopulateDelegate(RecyclingListViewItem item, int index) => InternalPopulate(item as TrackInfo, index);
+
+    private void InternalPopulate(TrackInfo info, int index)
+    {
+        info.ShowLoading();
+
+        if (!searchResults.ContainsKey(index)) return;
+        var track = Track.FromIVideo(searchResults[index]);
+
+        info.Populate(track, OnClick);
+
+        if (targetPlaylist != null && !targetPlaylist.Contains(track))
+            info.SetButtonAction("e145", (t, ti) => { targetPlaylist.Add(t); info.RemoveButtonAction(); });
+        else
+            info.RemoveButtonAction();
+
+        info.SetLeftSwipeAction(leftSwipeActionData);
+
+        if (!track.AvailableOffline())
+            info.SetRightSwipeAction(rightSwipeActionData);
+        else 
+            info.RemoveRightSwipeAction();
+
+        track.Save();
+    }
+
+    private void OnLeftSwipe(Track track, TrackInfo info)
+    {
+        //TODO replace with playlist editor
+        PlayerController.AddToQueue(track);
+        info.RemoveLeftSwipeAction();
+    }
+
+    private void OnRightSwipe(Track track, TrackInfo info)
+    {
+        _ = DownloadManager.DownloadAsync(track);
+        info.SetStatusState(true);
+        info.RemoveRightSwipeAction();
+
+        //This is buggy, may set another track info under certain conditions
+        DownloadManager.OnDownloadComplete += (string id) =>
+        {
+            if (id == track.Id) info.SetStatusState(false);
+        };
+    }
+
+    private void OnClick(Track track, TrackInfo info)
+    {
+        if (PlayerController.current != track)
+            PlayerController.PlayOverride(track);
     }
 
     private void Clear()
@@ -154,23 +243,6 @@ public class SearchManager : UIScreen
         curLoadedResults = 0;
         listView.RowCount = 0;
         listView.Refresh();
-    }
-
-    public override void Show()
-    {
-        if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
-            searchBar.ActivateInputField();
-    }
-
-    public override void Hide()
-    {
-        //cts.Cancel();
-        //cts = new CancellationTokenSource();
-
-        //Clear();
-
-        //listView.gameObject.SetActive(false);
-        //loadingView.SetActive(false);
     }
 
     private void OnDestroy()

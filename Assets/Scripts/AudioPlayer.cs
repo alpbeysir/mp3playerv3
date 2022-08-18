@@ -13,6 +13,8 @@ public abstract class AudioPlayer : IDisposable
 
     public abstract float Duration { get; }
 
+    public abstract bool IsPrepared { get; }
+
     public static Action OnStart;
     public static Action OnStop;
     public static Action OnPause;

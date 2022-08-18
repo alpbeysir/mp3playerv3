@@ -89,7 +89,7 @@ namespace YoutubeExplode.Videos.Streams
             // - 1080p60 (regular stream, high fps)
             // - 1080s (360° stream, regular fps)
             // - 1080s60 (360° stream, high fps)
-            // - 2160p60 HDR (high dynamic range, high fps)
+            // - 2160p60 HDR (high string range, high fps)
 
             var match = Regex.Match(label, @"^(\d+)\D(\d+)?");
 

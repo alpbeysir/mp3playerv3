@@ -1,76 +1,91 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
-[Serializable]
-public class Playlist
+public class Playlist : DBObject<Playlist>
 {
-    public readonly string Guid = /*Utils.GetUniqueKey()*/"main";
     public string Name { get; set; }
-    
-    public List<string> data = new();
-    public int currentIndex;
-    public Dictionary<string, int> isIn = new();
+    public List<string> Data { get; set; }
+    public int CurrentIndex { get; set; }
+    public int Count => Data.Count;
 
-    public int Length => data.Count;
-
-    public void Add(string id)
+    public Track this[int index]
     {
-        if (isIn.ContainsKey(id)) return;
-        data.Add(id);
-        isIn.Add(id, data.Count - 1);
-        Save(this);
+        get
+        {
+            Track t;
+            Track.TryLoad(Data[index], out t);
+            return t;
+        }
     }
 
-    public bool Contains(string id) => isIn.ContainsKey(id);
-
-    public List<string> GetAll() => data;
-    public string GetCurrent() => data[currentIndex];
-
-    public void Goto(string id)
+    public void Add(Track track)
     {
-        currentIndex = isIn[id];
-        Save(this);
-    }
-    public void Goto(int index)
-    {
-        currentIndex = index;
-        Save(this);
+        if (Data.Contains(track.Id)) return;
+        Data.Add(track.Id);
+        Save();
     }
 
+    public bool Contains(Track track) => Data.Contains(track.Id);
+
+    public void Goto(Track track) => CurrentIndex = Data.IndexOf(track.Id);
+
+    [UnityEngine.Scripting.Preserve]
+    public List<Track> GetAll()
+    {
+        var col = DB.Instance.GetCollection<Track>();
+        return Data.ConvertAll(s => col.FindById(s));
+    }
+
+    public Track GetCurrent()
+    {
+        if (CurrentIndex >= 0 && CurrentIndex < Data.Count)
+        {
+            Track t;
+            Track.TryLoad(Data[CurrentIndex], out t);
+            return t;
+        }
+        return null;
+    }
     public void Next()
     {
-        currentIndex++;
-        if (currentIndex >= data.Count) currentIndex = 0;
-        Save(this);
+        CurrentIndex++;
+        if (CurrentIndex >= Data.Count) CurrentIndex = Data.Count;
+        Save();
     }
 
     public void Previous()
     {
-        currentIndex--;
-        if (currentIndex < 0) currentIndex = data.Count - 1;
-        Save(this);
+        CurrentIndex--;
+        if (CurrentIndex < 0) CurrentIndex = 0;
+        Save();
     }
 
-    public void Remove(string id)
+    public void Remove(Track track)
     {
-        if (data.IndexOf(id) < currentIndex) currentIndex--;
-        data.Remove(id);
-        isIn.Remove(id);
-        Save(this);
+        if (Data.IndexOf(track.Id) < CurrentIndex) CurrentIndex--;
+        Data.Remove(track.Id);
+        Save();
     }
 
     public void ResetPosition()
     {
-        currentIndex = 0;
-        Save(this);
+        CurrentIndex = -1;
+        Save();
     }
 
-    public void SetPosition(string id)
+    public string GetIconUri()
     {
-        currentIndex = data.IndexOf(id);
-        Save(this);
+        if (Count > 0)
+        {
+            return this[0].LowResThumbnailUrl;
+        }
+        return null;
     }
-
-    public static bool Load(string guid, out Playlist playlist) => Utils.FileUtil.ReadJson(Utils.PlaylistPath + guid, out playlist);
-    public static void Save(Playlist playlist) => Utils.FileUtil.WriteJson(playlist, Utils.PlaylistPath + playlist.Guid);
+    public Playlist() : base()
+    {
+        if (Id == "") Id = Utils.GetUniqueKey();
+        if (Data == null) Data = new();
+    }
 }

@@ -108,14 +108,22 @@ public static class Utils
     {
         using (UnityWebRequest www = UnityWebRequest.Get(url))
         {
-            await www.SendWebRequest();
-            if (www.result != UnityWebRequest.Result.Success)
+            try
             {
-                Debug.Log($"{www.error}, URL:{www.url}");
+                await www.SendWebRequest();
+                if (www.result != UnityWebRequest.Result.Success)
+                {
+                    Debug.Log($"{www.error}, URL:{www.url}");
+                    return null;
+                }
+                else
+                    return www.downloadHandler.data;
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
                 return null;
             }
-            else 
-                return www.downloadHandler.data;
         }
     }
   
@@ -123,6 +131,13 @@ public static class Utils
     {
         var dirName = Path.GetDirectoryName(path);
         if (!Directory.Exists(dirName)) Directory.CreateDirectory(dirName);
+    }
+
+    public static void ClampPosition(this Transform tr, float minX = float.MinValue, float maxX = float.MaxValue,
+                                                        float minY = float.MinValue, float maxY = float.MaxValue,
+                                                        float minZ = float.MinValue, float maxZ = float.MaxValue)
+    {
+        tr.position = new Vector3(Mathf.Clamp(tr.position.x, minX, maxX), Mathf.Clamp(tr.position.y, minY, maxY), Mathf.Clamp(tr.position.z, minZ, maxZ));
     }
 
     public static string GetUniqueKey(int size = 24, string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")

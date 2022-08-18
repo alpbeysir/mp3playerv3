@@ -4,7 +4,6 @@ using System.IO;
 using System.Threading;
 using UnityEngine;
 
-[Serializable]
 public abstract class CacheObject<T>
 {
     public string id;
@@ -29,12 +28,6 @@ public static class Cache
             Utils.FileUtil.WriteJson(ret, path);
         }
         return ret;
-    }
-
-    public static void Save<T>(T ret) where T : CacheObject<T>
-    {
-        string path = GetPath<T>(ret.id);
-        Utils.FileUtil.WriteJson(ret, path);
     }
 
     private static string GetPath<T>(string id) where T : CacheObject<T>

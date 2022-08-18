@@ -12,6 +12,7 @@ public static class DownloadManager
     public static Action<string> OnDownloadStarted;
     public static Action<string> OnDownloadComplete;
     public static Action<string> OnDownloadFailed;
+    public static Action<string, float> OnDownloadProgress;
   
     private static Dictionary<string, (Progress<double> p, CancellationTokenSource cts)> downloads = new();
 
@@ -27,17 +28,25 @@ public static class DownloadManager
 
     public static async Task DownloadAsync(Track track, AudioOnlyStreamInfo streamInfo = null)
     {
-        string id = track.id;
+        string id = track.Id;
         string temp;
-        if (downloads.ContainsKey(id) || track.TryGetExistingMedia(out temp)) return;
-        
+        if (downloads.ContainsKey(id) || track.TryGetExistingMedia(out temp))
+        {
+            OnDownloadComplete(id);
+            return;
+        }
+
         downloads.Add(id, (new(), new()));
         var download = downloads[id];
+
+        download.p.ProgressChanged += (obj, progress) =>
+        {
+            OnDownloadProgress(id, (float)progress);
+        };
 
         try
         {
             download.cts.Token.ThrowIfCancellationRequested();
-
             Stopwatch timer = new();
             timer.Start();
 

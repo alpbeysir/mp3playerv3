@@ -8,32 +8,31 @@ using YoutubeExplode.Videos;
 using YoutubeExplode.Videos.Streams;
 
 [Serializable]
-public class Track : CacheObject<Track>
+public class Track : DBObject<Track>
 {
+    public Track() : base() { }
+
     public string Title { get; set; }
     public string ChannelName { get; set; }
-    public TimeSpan Duration { get; set; }
+
+    //In ticks, string format to make ARM happy
+    public string Duration { get; set; }
     public string LowResThumbnailUrl { get; set; }
     public string HighResThumbnailUrl { get; set; }
 
-    public Track() { }
-    public Track(string id) : base(id) { }
+    //public async Task<Track> Creator(string id, CancellationToken token)
+    //{
+    //    var video = await Youtube.Instance.Videos.GetAsync(id, token);
+    //    return FromIVideo(video);
+    //}
 
-    public override async Task<Track> Creator(string id, CancellationToken token)
+    public static Track FromIVideo<T>(T src) where T : IVideo
     {
-        var video = await Youtube.Instance.Videos.GetAsync(id, token);
-        return FromIVideo(video);
-    }
-
-    public static Track CreatorFromSearch(YoutubeExplode.Search.VideoSearchResult sr) => FromIVideo(sr);
-
-    private static Track FromIVideo<T>(T src) where T : IVideo
-    {
-        Track track = new(src.Id);
-        track.id = src.Id;
+        Track track = new();
+        track.Id = src.Id;
         track.Title = src.Title;
         track.ChannelName = src.Author.ChannelTitle;
-        track.Duration = (TimeSpan)src.Duration != null ? (TimeSpan)src.Duration : TimeSpan.Zero;
+        track.Duration = src.Duration.Value.Ticks.ToString();
 
         YoutubeExplode.Common.Thumbnail lowest = src.Thumbnails[0], highest = src.Thumbnails[0];
         foreach (var t in src.Thumbnails)
@@ -48,9 +47,15 @@ public class Track : CacheObject<Track>
         return track;
     }
 
+    public bool AvailableOffline()
+    {
+        string temp;
+        return TryGetExistingMedia(out temp);
+    }
+
     public bool TryGetExistingMedia(out string path)
     {
-        if (DownloadManager.IsDownloading(id))
+        if (DownloadManager.IsDownloading(Id))
         {
             Debug.Log("Still downloading");
             path = string.Empty;
@@ -58,7 +63,7 @@ public class Track : CacheObject<Track>
         }
 
         Container[] possibleContainers = { Container.WebM, Container.Mp3, Container.Mp4, Container.Tgpp };
-        string pathWithoutExt = Utils.MediaPath + id;
+        string pathWithoutExt = Utils.MediaPath + Id;
         foreach (var c in possibleContainers)
         {
             path = string.Format("{0}.{1}", pathWithoutExt, c.Name);
@@ -80,10 +85,8 @@ public class Track : CacheObject<Track>
     }
     public async Task<AudioOnlyStreamInfo> GetStreamInfoAsync(CancellationToken token = default)
     {
-        StreamManifest streamManifest = await Youtube.Instance.Videos.Streams.GetManifestAsync(id, token);
+        StreamManifest streamManifest = await Youtube.Instance.Videos.Streams.GetManifestAsync(Id, token);
         var streamInfo = streamManifest.GetAudioOnlyStreams().OrderBy(s => s.Bitrate).TryGetWithHighestBitrate();
         return (AudioOnlyStreamInfo)streamInfo;
     }
-
-
 }

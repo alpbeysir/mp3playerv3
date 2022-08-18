@@ -5,12 +5,21 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using DG.Tweening;
 
-[RequireComponent(typeof(Button))]
-public class ButtonTween : MonoBehaviour, IPointerClickHandler
+public class ButtonTween : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 {
-    public void OnPointerClick(PointerEventData eventData)
+    [SerializeField] private Transform target;
+    [SerializeField] private float scale = 0.9f;
+    public new bool enabled = true;
+    public void OnPointerDown(PointerEventData eventData)
     {
-        transform.DOScale(0.8f, 0.1f).OnComplete(() => { transform.DOScale(1f, 0.1f); });
+        if (enabled)
+            target.DOScale(scale, 0.1f);
+    }
+
+    public void OnPointerUp(PointerEventData eventData)
+    {
+        if (enabled)
+            target.DOScale(1f, 0.1f);
     }
 
 }

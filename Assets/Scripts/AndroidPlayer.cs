@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using UnityEngine;
 
 public class AndroidPlayer : AudioPlayer
@@ -17,7 +18,12 @@ public class AndroidPlayer : AudioPlayer
         private void Info(int what, int extra) { Debug.Log("Info called with " + what + extra); }
         private void Error(int what, int extra) { Debug.Log("Error called with " + what + extra); }
         
-        private void Prepared() { Debug.Log("Prepared called"); OnPrepared?.Invoke(); }
+        private void Prepared() 
+        {
+            Debug.Log("Prepared called");
+            prepared = true;
+            OnPrepared?.Invoke();
+        }
     }
 
     public override string CurFile
@@ -26,28 +32,45 @@ public class AndroidPlayer : AudioPlayer
         set
         {
             _curFile = value;
+            prepared = false;
 
             AndroidJNI.AttachCurrentThread();
-            CallOnService("start", _curFile, title, desc, iconUri);
+            CallOnService("start", _curFile);
             AndroidJNI.DetachCurrentThread();
         }
     }
 
-    public override float CurPos { get => CallOnService<float>("getPosition"); set => CallOnService("setPosition", value); }
-    public override float Volume { get => 1.0f; set => _ = value; }
-    
-    private static string title = "Playing", desc = "Tap to return to player", iconUri;
-    public static void SetNotifData(string _title, string _desc, string _iconUri)
+    public override float CurPos 
     {
-        title = _title;
-        desc = _desc;
-        iconUri = _iconUri;
+        get => prepared ? CallOnService<float>("getPosition") : 0;
+        set
+        {
+            if (prepared)
+                CallOnService("setPosition", value);
+        }
     }
 
-    public override float Duration => CallOnService<float>("getDuration");
+    public override float Volume { get => 1.0f; set => _ = value; }
+    public static void ShowNotification(string _title, string _desc, string _iconUri)
+    {
+        AndroidJNI.AttachCurrentThread();
+        CallOnService("showNotification", _title, _desc, _iconUri);
+        AndroidJNI.DetachCurrentThread();
+    }
+
+    public override float Duration => prepared ? CallOnService<float>("getDuration") : 0;
     public override bool IsPaused => CallOnService<bool>("isPaused");
-    public override void Pause() => CallOnService("pause");
-    public override void Resume() => CallOnService("resume");
+    public override bool IsPrepared => prepared;
+    public override void Pause()
+    {
+        if (prepared)
+            CallOnService("pause");
+    }
+    public override void Resume()
+    {
+        if (prepared)
+            CallOnService("resume");
+    }
     public override void Dispose() => CallOnService("dispose");
 
     public AndroidPlayer()
@@ -63,7 +86,8 @@ public class AndroidPlayer : AudioPlayer
     private static BackgroundAudioInterface baInterface = new BackgroundAudioInterface();
     private static AndroidJavaClass service;
     private static string _curFile;
-    private static float _duration;
+    private static bool prepared;
+
     private static void CallOnService(string method, params object[] args) => service.CallStatic(method, args);
     private static T CallOnService<T>(string method, params object[] args) => service.CallStatic<T>(method, args);
 }

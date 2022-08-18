@@ -21,6 +21,6 @@ public class NetworkedSprite : MonoBehaviour
         }
         else image.sprite = loadingSprite;
 
-        image.sprite = Utils.SpriteFromFile((await Cache.GetOrCreate<Thumbnail>(url)).data);
+        image.sprite = Utils.SpriteFromFile((await Cache.GetOrCreate<Thumbnail>(url)).Data);
     }
 }

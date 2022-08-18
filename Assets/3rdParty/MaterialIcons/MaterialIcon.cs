@@ -6,6 +6,7 @@ public class MaterialIcon : Text
 	public string iconUnicode
 	{
 		get { return System.Convert.ToString(char.ConvertToUtf32(text, 0), 16); }
+		set { base.text = char.ConvertFromUtf32(System.Convert.ToInt32(value, 16)); }
 	}
     
 	public void SetUnicode(string val)

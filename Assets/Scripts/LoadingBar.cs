@@ -10,16 +10,31 @@ public class LoadingBar : MonoBehaviour
     [SerializeField] private Image loadingImage;
     [SerializeField] private TextMeshProUGUI percentageText;
 
-    public void Init(Action<double> progressListener)
+    private float targetAmount;
+
+    public void Init()
     {
+        gameObject.SetActive(true);
         loadingImage.fillAmount = 0;
         percentageText.text = string.Format("%{0}", 0);
-        progressListener += OnProgressChanged;
     }
 
-    private void OnProgressChanged(double progress)
+    public void Disable()
     {
-        loadingImage.fillAmount = Mathf.Clamp01((float)progress);
-        percentageText.text = string.Format("%{0}", progress);
+        gameObject.SetActive(false);
+    }
+
+    private void Update()
+    {
+        if (loadingImage.fillAmount != targetAmount)
+        {
+            loadingImage.fillAmount = Mathf.Lerp(loadingImage.fillAmount, targetAmount, 0.15f);
+            percentageText.text = string.Format("%{0}", Mathf.CeilToInt(targetAmount * 100f));
+        }
+    }
+
+    public void SetProgress(float progress)
+    {
+        targetAmount = Mathf.Clamp01(progress);
     }
 }

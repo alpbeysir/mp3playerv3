@@ -42,7 +42,7 @@ public class WindowsPlayer : AudioPlayer
           
             reader = new MediaFoundationReader(value);
 
-            output = new WaveOutEvent();
+            //output = new WaveOutEvent();
             output.Init(reader);
             output.PlaybackStopped += StoppedCallback;
 
@@ -59,19 +59,21 @@ public class WindowsPlayer : AudioPlayer
 
     public override float Duration => reader != null ? (float)reader.TotalTime.TotalSeconds : 0;
 
-    public override bool IsPaused => output.PlaybackState == PlaybackState.Paused;
+    public override bool IsPaused => output == null ? true : output.PlaybackState == PlaybackState.Paused;
 
-    public override void Pause() { output.Pause(); OnPause?.Invoke(); }
+    public override void Pause() { output?.Pause(); OnPause?.Invoke(); }
 
-    public override void Resume() { output.Play(); OnResume?.Invoke(); }
+    public override void Resume() { output?.Play(); OnResume?.Invoke(); }
 
     private void StoppedCallback(object s, StoppedEventArgs a) => OnStop?.Invoke();
 
-    public bool IsStopped => output.PlaybackState == PlaybackState.Stopped;
+    public bool IsStopped => output == null ? true : output.PlaybackState == PlaybackState.Stopped;
+
+    public override bool IsPrepared => output != null && output.PlaybackState != PlaybackState.Stopped;
 
     public WindowsPlayer()
     {
-        //output.PlaybackStopped += StoppedCallback;
+        Task.Run(() => { output = new WaveOutEvent(); });
     }
     public override void Dispose()
     {

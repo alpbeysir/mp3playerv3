@@ -4,11 +4,10 @@ using UnityEngine;
 
 namespace Mp3Player
 {
-
     [System.Serializable]
     public class Thumbnail : CacheObject<Thumbnail>
     {
-        public byte[] data;
+        public byte[] Data { get; set; }
 
         public Thumbnail() { }
  
@@ -20,7 +19,7 @@ namespace Mp3Player
 
             Thumbnail thumbnail = new Thumbnail(id);
             thumbnail.id = id;
-            thumbnail.data = await Utils.DownloadFromURL(id);
+            thumbnail.Data = await Utils.DownloadFromURL(id);
             return thumbnail;
         }
     }

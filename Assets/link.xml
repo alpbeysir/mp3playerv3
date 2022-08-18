@@ -3,5 +3,7 @@
         <namespace fullname="System.Text.Json" preserve="all" />
         <namespace fullname="System.Text.Json.Serialization" preserve="all" />
         <namespace fullname="System.Text.Json.Serialization.Converters" preserve="all" />
+        <namespace fullname="LiteDB" preserve="all" />
+        <namespace fullname="LiteDB.Engine" preserve="all" />
     </assembly>
 </linker>

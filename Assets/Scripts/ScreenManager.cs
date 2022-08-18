@@ -2,19 +2,22 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
+using System.Linq;
+using UnityEngine.UI;
 
 public abstract class UIScreen : MonoBehaviour
 {
-    public abstract void Show();
-    public abstract void Hide();
+    public abstract void Show(params object[] args);
+    public virtual void Hide() { }
 }
 
 public class ScreenManager : Singleton<ScreenManager>
 {
     [SerializeField] private UIScreen startScreen;
     [SerializeField] private float animSpeed;
-    
-    private Stack<UIScreen> history = new Stack<UIScreen>();
+    [SerializeField] private float animScale;
+ 
+    private Stack<(UIScreen screen, object[] args)> history = new();
 
     private new void Awake()
     {
@@ -27,7 +30,8 @@ public class ScreenManager : Singleton<ScreenManager>
     }
     void Start()
     {
-        ShowOther(startScreen);
+        if (startScreen)
+            ShowOther(startScreen);
     }
 
     private void Update()
@@ -42,31 +46,58 @@ public class ScreenManager : Singleton<ScreenManager>
         var prev = history.Pop();
         var cur = history.Peek();
 
-        cur.gameObject.SetActive(true);
+        cur.screen.gameObject.SetActive(true);
 
-        prev.gameObject.SetActive(false);
-        //prev.transform.DOLocalMoveX(Screen.width * 2, animSpeed).OnComplete(() => { prev.transform.DOLocalMoveX(0f, 0f).OnComplete(() => { prev.gameObject.SetActive(false); }); });
-        prev.Hide();
-
-        //cur.transform.DOLocalMoveX(Screen.width * 2, 0f).OnComplete(() => { cur.transform.DOLocalMoveX(0f, animSpeed); });
-        cur.Show();
-        Log("Showing screen " + cur.name);
+        prev.screen.Hide();
+        prev.screen.transform.GetComponentsInChildren<Image>().ToList().ForEach(i => FadeOutAnim(i, FadeDirection.Out));
+        prev.screen.transform.DOScale(animScale, animSpeed).OnComplete(() => { prev.screen.transform.DOScale(1.0f, 0f); prev.screen.gameObject.SetActive(false); });
+    
+        cur.screen.Show(cur.args);
     }
 
-    public void ShowOther(UIScreen screen)
+    public void ShowWithoutArgs(UIScreen screen) => ShowOther(screen);
+
+    public void ShowOther(UIScreen screen, params object[] args)
     {
         UIScreen toBeHidden = null;
         if (history.Count > 0)
         {
-            history.Peek().Hide();
-            toBeHidden = history.Peek();
+            history.Peek().screen.Hide();
+            toBeHidden = history.Peek().screen;
         }
 
-        history.Push(screen);
+        history.Push((screen, args));
         screen.gameObject.SetActive(true);
         toBeHidden?.gameObject.SetActive(false);
-        //screen.transform.DOLocalMoveX(Screen.width, 0f).OnComplete(() => { screen.transform.DOLocalMoveX(0f, animSpeed).OnComplete(() => { toBeHidden?.gameObject.SetActive(false); });  });
-        screen.Show();
-        Log("Showing screen " + screen.name);
+        screen.Show(args);
+        screen.transform.DOScale(animScale, 0f);
+        screen.transform.DOScale(1.0f, animSpeed);
+        screen.transform.GetComponentsInChildren<Image>().ToList().ForEach(i => FadeOutAnim(i, FadeDirection.In));
+    }
+
+    public void WipeHistoryShow(UIScreen screen, params object[] args)
+    {
+        var toBeHidden = history.Peek().screen;
+        history.Clear();
+        toBeHidden?.gameObject.SetActive(false);
+        ShowOther(screen, args);
+    }
+
+    enum FadeDirection
+    {
+        In, Out
+    }
+
+    //TODO investigate, this may be the cause of extreme stutter on mobile
+    private void FadeOutAnim(Image image, FadeDirection dir)
+    {
+        //TEMP causes freeze on phone
+        return;
+
+        var oldTransparency = image.color.a;
+        if (dir == FadeDirection.In) 
+            image.DOFade(0f, 0f).OnComplete(() => image.DOFade(oldTransparency, animSpeed));
+        else if (dir == FadeDirection.Out)
+            image.DOFade(0f, animSpeed).OnComplete(() => image.DOFade(oldTransparency, 0f));
     }
 }

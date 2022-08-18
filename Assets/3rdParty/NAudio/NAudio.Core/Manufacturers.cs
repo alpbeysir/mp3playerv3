@@ -256,7 +256,7 @@ namespace NAudio
 		/// <summary>AMD</summary>
 		Amd							= 146,
 		/// <summary>Core Dynamics</summary>
-		Coredynamics				= 147,
+		Corestrings				= 147,
 		/// <summary>CANAM Computers</summary>
 		Canam						= 148,
 		/// <summary>Softsound, Ltd.</summary>

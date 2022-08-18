@@ -1,33 +1,36 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
-using PolyAndCode.UI;
 using TMPro;
 using DG.Tweening;
 using System;
 
-public class PlaylistInfo : MonoBehaviour, ICell, IPointerClickHandler
+public class PlaylistInfo : RecyclingListViewItem, IPointerClickHandler
 {
     //TODO icon
-    [SerializeField] private Image icon;
+    [SerializeField] private NetworkedSprite icon;
     
     [SerializeField] private TextMeshProUGUI nameDisplay;
     [SerializeField] private TextMeshProUGUI countDisplay;
 
-    private string guid;  
-    private Action<string> onClick;
+    private Playlist playlist; 
+    private Action<Playlist> onClick;
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        transform.DOScale(0.8f, 0.1f).OnComplete(() => { transform.DOScale(1f, 0.1f); });
-        onClick?.Invoke(guid);
+        onClick?.Invoke(playlist);
     }
 
-    public void Populate(Playlist playlist, Action<string> _onClick = null)
+    public void Populate(Playlist _playlist, Action<Playlist> _onClick = null)
     {
-        guid = playlist.Guid;
+        playlist = _playlist;
         nameDisplay.text = playlist.Name;
-        countDisplay.text = playlist.Length.ToString();
+        countDisplay.text = playlist.Count.ToString() + " items";
+
+        //TODO replace with collage of images, or maybe custom image from internal storage
+        var iconUri = playlist.GetIconUri();
+        if (iconUri != null) _ = icon.Set(iconUri);
+
         onClick = _onClick;
     }
 }
