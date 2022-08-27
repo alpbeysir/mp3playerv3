@@ -32,16 +32,12 @@ public class BuildHandler : Editor
 
         BuildPlayerOptions options = new BuildPlayerOptions();
         options.locationPathName = Application.dataPath.Replace("/Assets", "");
-        options.locationPathName = options.locationPathName + "/Builds/" + PlayerSettings.productName + " v" + PlayerSettings.bundleVersion + ".apk";
+        options.locationPathName = options.locationPathName + "/Builds/" + PlayerSettings.productName + "_v" + PlayerSettings.bundleVersion + ".apk";
         options.target = BuildTarget.Android;
         options.options = BuildOptions.AutoRunPlayer;
         options.scenes = EditorBuildSettingsScene.GetActiveSceneList(EditorBuildSettings.scenes);
 
         var report = BuildPipeline.BuildPlayer(options);
-        //if (report.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded)
-        //{
-
-        //}
 
     }
 }

@@ -1,0 +1,2 @@
+-keepnames class com.google.common.** { *; }
+-keepnames class com.google.android.exoplayer2.** { *; }

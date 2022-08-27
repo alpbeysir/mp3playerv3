@@ -1,5 +1,5 @@
 <dependencies>
     <androidPackages>
-        <androidPackage spec="androidx.media:media:1.6.0"/>
+        <androidPackage spec="com.google.android.exoplayer:exoplayer:2.18.1"/>
     </androidPackages>
 </dependencies>
