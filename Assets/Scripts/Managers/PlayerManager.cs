@@ -4,10 +4,27 @@ using System;
 using Cysharp.Threading.Tasks;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using LiteDB;
+using MP3Player;
 
 public enum Direction
 {
     Previous, Current, Next
+}
+
+public class PlayerState : DBObject<PlayerState>
+{
+    public string Current { get; set; }
+    public string Playlist { get; set; }
+    public List<string> History { get; set; }
+    public List<string> PlayQueue { get; set; }
+
+    public PlayerState() : base()
+    {
+        Id = "state";
+        History = new();
+        PlayQueue = new();
+    }
 }
 
 public static class PlayerManager
@@ -21,63 +38,66 @@ public static class PlayerManager
     public static void Pause() => player.Pause();
     public static void Resume() => player.Resume();
 
-    public static Track current;
-
     private static AudioPlayer player;
     private static CancellationTokenSource cts;
 
-    private static List<Track> history;
-    private static Playlist playlist;
-    private static List<Track> playQueue;
+    private static PlayerState state;
+
+    public static Track Current => Track.Get(state.Current);
 
     private static float duration;
     private static float posCache;
 
     public static void SetPlaylist(Playlist _playlist)
     {
-        playlist = _playlist;
-        PlayOverride(playlist.GetCurrent());
-        playlist.Next();
+        state.Playlist = _playlist.Id;
+        PlayOverride(Playlist.Get(state.Playlist).GetCurrent());
+        Playlist.Get(state.Playlist).Next();
+        state.Save();
     }
 
     public static void PlayOverride(Track track)
     {
-        playQueue.Insert(0, track);
+        state.PlayQueue.Insert(0, track.Id);
         RequestTrackChange(Direction.Next);
+        state.Save();
     }
 
     public static void AddToQueue(Track track)
     {
-        playQueue.Add(track);
-        if (current == null)
+        state.PlayQueue.Add(track.Id);
+        if (Current == null)
         {
             RequestTrackChange(Direction.Next);
         }
+        state.Save();
     }
-    public static bool IsInQueue(Track track) => playQueue.Contains(track);
+    public static bool IsInQueue(Track track) => state.PlayQueue.Contains(track.Id);
 
     public static void RequestTrackChange(Direction dir)
     {
         switch (dir)
         {
             case Direction.Previous:
-                playQueue.Insert(0, current);
-                current = history[history.Count - 1];
-                history.RemoveAt(history.Count - 1);
+                state.PlayQueue.Insert(0, Current.Id);
+                state.Current = state.History[state.History.Count - 1];
+                state.History.RemoveAt(state.History.Count - 1);
                 break;
             case Direction.Current:
                 break;
             case Direction.Next:
-                if (current != null)
-                    history.Add(current);
-                current = GetNextTrack();
+                if (Current != null)
+                    state.History.Add(Current.Id);
+                state.Current = GetNextTrack().Id;
                 break;
         }
+
+        state.Save();
 
         if (cts.IsCancellationRequested) return;
         cts.Cancel();
         cts = new CancellationTokenSource();
-        Task.Run(() => ChangeTrack(current, cts.Token), cts.Token);
+        Task.Run(() => ChangeTrack(Current, cts.Token), cts.Token);
     }
 
     public static void Initialize()
@@ -97,8 +117,8 @@ public static class PlayerManager
         cts = new();
 
         //TODO load from database here
-        playQueue = new();
-        history = new();
+        state = PlayerState.Get("state");
+        RequestTrackChange(Direction.Current);
     }
 
     public static void Dispose()
@@ -112,8 +132,6 @@ public static class PlayerManager
         AudioPlayer.OnPause -= OnPlayerPause;
         AudioPlayer.OnPrepared = OnPlayerPrepared;
         DownloadManager.OnDownloadComplete -= OnDownloadComplete;
-
-        current = null;
     }
 
     private static void OnPlayerResume()
@@ -140,30 +158,32 @@ public static class PlayerManager
 
     private static Track GetNextTrack()
     {
-        if (playQueue.Count > 0)
+        if (state.PlayQueue.Count > 0)
         {
-            var track = playQueue[0];
-            playQueue.RemoveAt(0);
-            return track;
+            var trackId = state.PlayQueue[0];
+            state.PlayQueue.RemoveAt(0);
+            state.Save();
+            return Track.Get(trackId);
         }
         else
         {
-            var track = playlist.GetCurrent();
+            var track = Playlist.Get(state.Playlist).GetCurrent();
             if (track == null)
             {
                 //TODO handle end of playlist (switch to recommendations) for now just restart playlist
                 Debug.Log("Reached playlist end");
-                playlist.ResetPosition();
-                return playlist.GetCurrent();
+                Playlist.Get(state.Playlist).ResetPosition();
+                return Playlist.Get(state.Playlist).GetCurrent();
             }
-            playlist.Next();
+            Playlist.Get(state.Playlist).Next();
+            state.Save();
             return track;
         }
     }
 
     private static void OnDownloadComplete(string id)
     {
-        if (current != null && current.Id == id)
+        if (Current != null && Current.Id == id)
         {
             posCache = player.CurPos;
             RequestTrackChange(Direction.Current);
@@ -172,7 +192,7 @@ public static class PlayerManager
 
     private static void ChangeTrack(Track track, CancellationToken token)
     {
-        current = track;
+        state.Current = track.Id;
         token.ThrowIfCancellationRequested();
         try
         {
@@ -182,9 +202,9 @@ public static class PlayerManager
 
             //TODO refactor notification back into original format, current design causes issues
             if (Application.platform == RuntimePlatform.Android)
-                AndroidPlayer.ShowNotification(current.Title, current.ChannelName, TextureUtils.TryGetLocalUri(current.LowResThumbnailUrl));
+                AndroidPlayer.SetNotificationData(Current.Title, Current.ChannelName, TextureUtils.TryGetLocalUri(Current.LowResThumbnailUrl));
 
-            player.CurFile = mediaUri;
+            player.SetDataSource(mediaUri);
             UniTask.Post(OnPlayerStateChanged);
         }
         catch (Exception e)

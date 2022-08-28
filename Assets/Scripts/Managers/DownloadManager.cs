@@ -60,7 +60,7 @@ public static class DownloadManager
             if (streamInfo == null) streamInfo = await track.GetStreamInfoAsync(download.cts.Token);
             var path = Utils.MediaPath + string.Format("{0}.{1}", id, streamInfo.Container.Name);
             Utils.CreateDirFromPath(path);
-            await Youtube.Instance.Videos.Streams.DownloadAsync(streamInfo, path, download.p, download.cts.Token);
+            await FakeYoutube.Instance.Videos.Streams.DownloadAsync(streamInfo, path, download.p, download.cts.Token);
 
             //Download thumbnails as well, will cause memory leak!!! Need to refactor TextureUtils anyway
             _ = TextureUtils.Texture2DFromUrlAsync(track.LowResThumbnailUrl).ContinueWith(tex => UnityEngine.Object.DestroyImmediate(tex));

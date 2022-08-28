@@ -4,6 +4,7 @@ using UnityEngine.EventSystems;
 using TMPro;
 using DG.Tweening;
 using System;
+using MP3Player;
 
 public class PlaylistInfo : RecyclingListViewItem, IPointerClickHandler
 {

@@ -26,18 +26,13 @@ public class AndroidPlayer : AudioPlayer
         }
     }
 
-    public override string CurFile
+    public override void SetDataSource(string uri)
     {
-        get => _curFile;
-        set
-        {
-            _curFile = value;
-            prepared = false;
-
-            AndroidJNI.AttachCurrentThread();
-            CallOnService("start", _curFile);
-            AndroidJNI.DetachCurrentThread();
-        }
+        prepared = false;
+        AndroidJNI.AttachCurrentThread();
+        CallOnService("showNotification", title, desc, iconUri);
+        CallOnService("start", uri);
+        AndroidJNI.DetachCurrentThread();
     }
 
     public override float CurPos 
@@ -51,12 +46,13 @@ public class AndroidPlayer : AudioPlayer
     }
 
     public override float Volume { get => 1.0f; set => _ = value; }
-    public static void ShowNotification(string _title, string _desc, string _iconUri)
+    public static void SetNotificationData(string _title, string _desc, string _iconUri)
     {
-        AndroidJNI.AttachCurrentThread();
-        CallOnService("showNotification", _title, _desc, _iconUri);
-        AndroidJNI.DetachCurrentThread();
+        title = _title;
+        desc = _desc;
+        iconUri = _iconUri;
     }
+    private static string title = "Playing", desc = "Tap to return to player", iconUri = "";
 
     public override float Duration => prepared ? CallOnService<float>("getDuration") : 0;
     public override bool IsPaused => CallOnService<bool>("isPaused");
@@ -85,7 +81,6 @@ public class AndroidPlayer : AudioPlayer
 
     private static BackgroundAudioInterface baInterface = new BackgroundAudioInterface();
     private static AndroidJavaClass service;
-    private static string _curFile;
     private static bool prepared;
 
     private static void CallOnService(string method, params object[] args) => service.CallStatic(method, args);

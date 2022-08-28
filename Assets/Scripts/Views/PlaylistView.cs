@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using MP3Player;
 
 public class PlaylistView : UIScreen
 {
@@ -27,7 +28,7 @@ public class PlaylistView : UIScreen
     /// <param name="args"></param>
     public override void Show(params object[] args)
     {
-        Playlist.TryLoad(args[0] as string, out playlist);
+        playlist = Playlist.Get(args[0] as string);
         _ = iconDisplay.Set(playlist.GetIconUri());
 
         if (listView.RowCount != playlist.Count) listView.RowCount = playlist.Count;
@@ -72,10 +73,59 @@ public class PlaylistView : UIScreen
     {
         var info = item as TrackInfo;
 
-        info.ShowLoading();
-
         var track = playlist[rowIndex];
-        info.Populate(track, OnClickInfo);
+        info.Populate(track);
+        info.SetOnClickAction(OnClickInfo);
+        info.SetButtonAction("e5d4", ShowTrackDetails);
+    }
+    private void ShowTrackDetails(Track t, TrackInfo ti)
+    {
+        OptionsViewArgs args = new();
+
+        args.options.Add(new()
+        {
+            iconUnicode = "e145",
+            title = "Add to Queue",
+            onClick = () =>
+            {
+                PlayerManager.AddToQueue(t);
+            }
+        });
+
+        args.options.Add(new()
+        {
+            iconUnicode = "eb80",
+            title = "Remove From Playlist",
+            onClick = () =>
+            {
+                playlist.Remove(t);
+            }
+        });
+
+        if (!t.AvailableOffline())
+            args.options.Add(new()
+            {
+                iconUnicode = "f090",
+                title = "Download",
+                onClick = () =>
+                {
+                    _ = DownloadManager.DownloadAsync(t);
+                    ti.Populate(t);
+                }
+            });
+        else
+            args.options.Add(new()
+            {
+                iconUnicode = "e872",
+                title = "Delete From Storage",
+                onClick = () =>
+                {
+                    DownloadManager.Delete(t);
+                    ti.Populate(t);
+                }
+            });
+
+        ScreenManager.Instance.ShowOther(optionsView, args);
     }
 
     private void OnClickInfo(Track t, TrackInfo ti)

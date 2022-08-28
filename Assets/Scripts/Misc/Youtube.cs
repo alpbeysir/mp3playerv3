@@ -1,6 +1,6 @@
 ﻿using YoutubeExplode;
 
-public static class Youtube
+public static class FakeYoutube
 {
     private static YoutubeClient _instance;
     public static YoutubeClient Instance

@@ -44,7 +44,7 @@ public class MiniplayerView : Singleton<MiniplayerView>, IPointerClickHandler
     }
     private void OnTrackChanged()
     {
-        UpdateTrackDisplay(PlayerManager.current);
+        UpdateTrackDisplay(PlayerManager.Current);
         SetPlayerControlInteractivity(true);
         if (!playerView.gameObject.activeSelf)
             Show();
@@ -74,7 +74,7 @@ public class MiniplayerView : Singleton<MiniplayerView>, IPointerClickHandler
 
     public void Show()
     {
-        if (PlayerManager.current != null)
+        if (PlayerManager.Current != null)
         {
             targetViewParentHeight = -1150;
         }

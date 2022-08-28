@@ -24,7 +24,7 @@ public class PlayerView : UIScreen
 
     private void OnTrackChanged()
     {
-        UpdateTrackDisplay(PlayerManager.current);
+        UpdateTrackDisplay(PlayerManager.Current);
         SetPlayerControlInteractivity(true);
     }
 

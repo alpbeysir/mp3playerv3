@@ -47,10 +47,9 @@ public class TrackInfo : RecyclingListViewItem, IDragHandler, IBeginDragHandler,
         infoParent.SetActive(false);
     }
 
-    public void Populate(Track t, Action<Track, TrackInfo> _onClick = null)
+    public void Populate(Track t)
     {
         track = t;
-        onClick = _onClick;
 
         loadingParent.SetActive(false);
         infoParent.SetActive(true);
@@ -71,6 +70,11 @@ public class TrackInfo : RecyclingListViewItem, IDragHandler, IBeginDragHandler,
         {
             if (id == t.Id) SetStatusState(false);
         };
+    }
+    
+    public void SetOnClickAction(Action<Track, TrackInfo> _onClick)
+    {
+        onClick = _onClick;
     }
 
     public void SetButtonAction(string iconUnicode, Action<Track, TrackInfo> _onButton)

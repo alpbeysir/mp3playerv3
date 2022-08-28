@@ -85,7 +85,7 @@ public class Track : DBObject<Track>
     }
     public async Task<AudioOnlyStreamInfo> GetStreamInfoAsync(CancellationToken token = default)
     {
-        StreamManifest streamManifest = await Youtube.Instance.Videos.Streams.GetManifestAsync(Id, token);
+        StreamManifest streamManifest = await FakeYoutube.Instance.Videos.Streams.GetManifestAsync(Id, token);
         var streamInfo = streamManifest.GetAudioOnlyStreams().OrderBy(s => s.Bitrate).TryGetWithHighestBitrate();
         return (AudioOnlyStreamInfo)streamInfo;
     }

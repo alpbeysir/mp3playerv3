@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System;
 using UnityEngine.Events;
+using MP3Player;
 
 public class SearchView : UIScreen
 {
@@ -56,6 +57,7 @@ public class SearchView : UIScreen
                 Clear();
                 searchBar.SetTextWithoutNotify("");
             }
+            targetPlaylist = null;
             searchBar.placeholder.GetComponent<TMPro.TextMeshProUGUI>().text = "Search YouTube";
         }
 
@@ -102,7 +104,7 @@ public class SearchView : UIScreen
         failedView.SetActive(false);
 
         await UniTask.SwitchToThreadPool();
-        searchEnumerator = Youtube.Instance.Search.GetVideosAsync(query, token).GetAsyncEnumerator();
+        searchEnumerator = FakeYoutube.Instance.Search.GetVideosAsync(query, token).GetAsyncEnumerator();
         try
         {
             //Search
@@ -196,7 +198,9 @@ public class SearchView : UIScreen
         if (!searchResults.ContainsKey(index)) return;
         var track = Track.FromIVideo(searchResults[index]);
 
-        info.Populate(track, OnClick);
+        info.Populate(track);
+
+        info.SetOnClickAction(OnClick);
 
         if (targetPlaylist != null && !targetPlaylist.Contains(track))
             info.SetButtonAction("e145", (t, ti) => { targetPlaylist.Add(t); ti.RemoveButtonAction(); });
@@ -216,6 +220,17 @@ public class SearchView : UIScreen
     private void ShowTrackDetails(Track t, TrackInfo ti)
     {
         OptionsViewArgs args = new();
+
+        args.options.Add(new()
+        {
+            iconUnicode = "e145",
+            title = "Add To Queue",
+            onClick = () =>
+            {
+                PlayerManager.AddToQueue(t);
+            }
+        });
+
         if (!t.AvailableOffline()) 
             args.options.Add(new()
             {
@@ -224,7 +239,7 @@ public class SearchView : UIScreen
                 onClick = () =>
                 {
                     _ = DownloadManager.DownloadAsync(t);
-                    listView.Refresh(ti);
+                    ti.Populate(t);
                 }
             });
         else
@@ -235,7 +250,7 @@ public class SearchView : UIScreen
                 onClick = () =>
                 {
                     DownloadManager.Delete(t);
-                    listView.Refresh(ti);
+                    ti.Populate(t);
                 }
             });
 
@@ -269,7 +284,7 @@ public class SearchView : UIScreen
 
     private void OnClick(Track track, TrackInfo info)
     {
-        if (PlayerManager.current != track)
+        if (PlayerManager.Current != track)
             PlayerManager.PlayOverride(track);
     }
 

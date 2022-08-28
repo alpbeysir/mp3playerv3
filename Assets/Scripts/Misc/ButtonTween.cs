@@ -4,22 +4,47 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using DG.Tweening;
+using Cysharp.Threading.Tasks;
 
-public class ButtonTween : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
+public class ButtonTween : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler
 {
     [SerializeField] private Transform target;
     [SerializeField] private float scale = 0.9f;
     public new bool enabled = true;
+    private bool tweening;
     public void OnPointerDown(PointerEventData eventData)
     {
         if (enabled)
-            target.DOScale(scale, 0.1f);
+            StartCoroutine(WaitAndAnimate(0.05f));
     }
 
-    public void OnPointerUp(PointerEventData eventData)
+    private IEnumerator WaitAndAnimate(float time)
     {
-        if (enabled)
-            target.DOScale(1f, 0.1f);
+        Vector2 firstPos = Input.mousePosition;
+        yield return new WaitForSecondsRealtime(time);
+        if (Vector2.Distance(firstPos, Input.mousePosition) < Screen.dpi * 0.1f && !tweening) 
+        { 
+            target.DOScale(scale, 0.1f).OnComplete(() => tweening = false);
+            tweening = true;
+        }
     }
 
+    public async void OnPointerUp(PointerEventData eventData)
+    {
+        await UniTask.WaitUntil(() => !tweening);
+        if (enabled)
+        {
+            target.DOScale(1f, 0.1f).OnComplete(() => tweening = false);
+            tweening = true;
+        }
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        if (enabled && !tweening)
+        {
+            target.DOScale(1f, 0.1f).OnComplete(() => tweening = false);
+            tweening = true;
+        }
+    }
 }

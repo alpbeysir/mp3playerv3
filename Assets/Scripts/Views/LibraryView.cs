@@ -3,13 +3,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using MP3Player;
 
 public class LibraryView : UIScreen
 {
     [SerializeField] private RecyclingListView listView;
     [SerializeField] private PlaylistView playlistView;
 
-    private List<Playlist> playlists;
+    private IEnumerable<Playlist> playlists;
     
     private void Awake()
     {
@@ -19,12 +20,12 @@ public class LibraryView : UIScreen
     private void PopulateDelegate(RecyclingListViewItem item, int rowIndex)
     {
         var info = item as PlaylistInfo;
-        info.Populate(playlists[rowIndex], PlaylistClicked);
+        info.Populate(playlists.ElementAt(rowIndex), PlaylistClicked);
     }
 
     public override void Show(params object[] args)
     {
-        playlists = DB.Instance.GetCollection<Playlist>().FindAll().ToList();
+        playlists = DB.Instance.GetCollection<Playlist>().FindAll();
         if (listView.RowCount != playlists.Count()) listView.RowCount = playlists.Count();
         else listView.Refresh();
     }

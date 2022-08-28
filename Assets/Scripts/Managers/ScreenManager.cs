@@ -32,6 +32,8 @@ public class ScreenManager : Singleton<ScreenManager>
     {
         if (startScreen)
             ShowOther(startScreen);
+
+        _ = YoutubeAuth.Run();
     }
 
     private void Update()

@@ -4247,6 +4247,7 @@ MonoBehaviour:
   failedView: {fileID: 1033423583}
   searchBar: {fileID: 317506142}
   disableLoadThreshold: 11
+  optionsView: {fileID: 1092059517}
   leftSwipeActionData:
     name: Add to Playlist
     iconUnicode: e02e

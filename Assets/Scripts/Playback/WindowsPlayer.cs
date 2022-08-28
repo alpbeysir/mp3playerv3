@@ -20,39 +20,36 @@ public class WindowsPlayer : AudioPlayer
             if (reader != null) reader.CurrentTime = TimeSpan.FromSeconds(value); 
         } 
     }
-    
-    public override string CurFile {
-        get => "";
-        set
+
+    public override void SetDataSource(string uri)
+    {
+        fileLock.WaitOne();
+
+        //Stop previous playback
+        if (reader != null)
         {
-            fileLock.WaitOne();
-            
-            //Stop previous playback
-            if (reader != null)
-            {
-                reader.Close();
-                reader.Dispose();
-            }
-            
-            if (output != null)
-            {
-                output.PlaybackStopped -= StoppedCallback;
-                output.Stop();
-            }
-          
-            reader = new MediaFoundationReader(value);
-
-            //output = new WaveOutEvent();
-            output.Init(reader);
-            output.PlaybackStopped += StoppedCallback;
-
-            output.Play();
-        
-            OnPrepared?.Invoke();
-            OnStart?.Invoke();
-
-            fileLock.ReleaseMutex();
+            reader.Close();
+            reader.Dispose();
         }
+
+        if (output != null)
+        {
+            output.PlaybackStopped -= StoppedCallback;
+            output.Stop();
+        }
+
+        reader = new MediaFoundationReader(uri);
+
+        //output = new WaveOutEvent();
+        output.Init(reader);
+        output.PlaybackStopped += StoppedCallback;
+
+        output.Play();
+
+        OnPrepared?.Invoke();
+        OnStart?.Invoke();
+
+        fileLock.ReleaseMutex();
     }
 
     public override float Volume { get => output.Volume; set => output.Volume = value; }
