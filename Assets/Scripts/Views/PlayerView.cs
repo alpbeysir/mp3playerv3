@@ -13,6 +13,7 @@ namespace MP3Player.Views
 {
     public class PlayerView : UIView
     {
+        [SerializeField] private RectTransform imageParent;
         [SerializeField] private ImageView thumbnail;
         [SerializeField] private VideoView videoView;
         [SerializeField] private TextMeshProUGUI titleDisplay;
@@ -23,12 +24,16 @@ namespace MP3Player.Views
         [SerializeField] private TextMeshProUGUI currentTimeDisplay, durationDisplay;
         [SerializeField] private GameObject playIcon, pauseIcon;
 
+        private float targetImageParentHeight;
+
         private void Start()
         {
             PlayerController.Initialize();
 
             PlayerController.OnPlayerStateChanged += OnPlayerStateChanged;
             PlayerController.OnTrackChanged += OnTrackChanged;
+
+            targetImageParentHeight = imageParent.rect.height;
         }
 
         private void OnTrackChanged()
@@ -65,7 +70,14 @@ namespace MP3Player.Views
                 seekBar.SetValueWithoutNotify(0);
                 currentTimeDisplay.text = TimeSpan.FromSeconds(0).ToString("mm\\:ss");
             }
-       
+            
+            if (Mathf.Abs(imageParent.rect.height - targetImageParentHeight) > 5)
+            {
+                Vector2 v = imageParent.sizeDelta;
+                v.y = Mathf.Lerp(v.y, targetImageParentHeight, 0.2f);
+                imageParent.sizeDelta = v;
+                LayoutRebuilder.MarkLayoutForRebuild((RectTransform)imageParent.parent.transform);
+            }
         }      
 
         private void OnPlayerStateChanged()
@@ -100,6 +112,14 @@ namespace MP3Player.Views
         {
             PlayerController.CurPos = seekBar.value * PlayerController.Duration;
         }
+        public void ImagePressed()
+        {
+            thumbnail.transform.parent.gameObject.SetActive(!thumbnail.transform.parent.gameObject.activeSelf);
+            videoView.gameObject.SetActive(!videoView.gameObject.activeSelf);
+
+            if (videoView.gameObject.activeSelf) targetImageParentHeight = 350;
+            else targetImageParentHeight = 250;
+        }
 
         private void UpdatePlayPauseState()
         {
@@ -108,7 +128,7 @@ namespace MP3Player.Views
 
             if (PlayerController.IsPaused)
                 videoView.Pause();
-            else 
+            else
                 videoView.Play();
         }
 
@@ -123,11 +143,6 @@ namespace MP3Player.Views
             PlayerController.OnPlayerStateChanged -= OnPlayerStateChanged;
             PlayerController.OnTrackChanged -= OnTrackChanged;
             PlayerController.Dispose();
-        }
-
-        private void OnEnable()
-        {
-            videoView.Play();
         }
     }
 }

@@ -31,6 +31,8 @@ namespace MP3Player.Managers
             Application.targetFrameRate = 144;
             ApplicationChrome.statusBarState = ApplicationChrome.States.TranslucentOverContent;
             ApplicationChrome.navigationBarState = ApplicationChrome.States.Visible;
+
+            DB.PreCacheInstance();
         }
         void Start()
         {

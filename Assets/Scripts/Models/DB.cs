@@ -4,6 +4,8 @@ using MP3Player.Misc;
 using LiteDB;
 using UnityEngine;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace MP3Player.Models
 {
@@ -13,8 +15,6 @@ namespace MP3Player.Models
         public DBObject() { }
 
         private static Dictionary<string, object> instanceCache = new();
-
-        public Action<T> OnChanged;
 
         public static T Get(string id)
         {
@@ -48,7 +48,11 @@ namespace MP3Player.Models
         public void Save()
         {
             DB.Instance.GetCollection<T>().Upsert((T)this);
-            OnChanged?.Invoke((T)this);
+        }
+
+        public async Task SaveAsync()
+        {
+            await Task.Run(() => DB.Instance.GetCollection<T>().Upsert((T)this));
         }
 
         public void Delete()
@@ -65,11 +69,28 @@ namespace MP3Player.Models
         {
             get
             {
-                //Make sure this /db directory exists
-                Utils.CreateDirFromPath(Utils.DataPath + "db");
-                if (db == null) db = new LiteDatabase(Utils.DataPath + "db");
+                if (db == null)
+                {
+                    InitializeDB();
+                }
                 return db;
             }
+        }
+
+        public static void PreCacheInstance()
+        {
+            ThreadPool.QueueUserWorkItem((obj) => {
+                lock (db)
+                {
+                    InitializeDB();
+                }
+            });
+        }
+        
+        private static void InitializeDB()
+        {
+            Utils.CreateDirFromPath(Utils.DataPath + "db");
+            db = new LiteDatabase(Utils.DataPath + "db");
         }
 
         public static void Dispose()

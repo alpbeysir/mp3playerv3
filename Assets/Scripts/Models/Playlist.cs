@@ -62,14 +62,14 @@ namespace MP3Player.Models
         {
             CurrentIndex++;
             if (CurrentIndex >= Data.Count) CurrentIndex = Data.Count;
-            Save();
+            _ = SaveAsync();
         }
 
         public void Previous()
         {
             CurrentIndex--;
             if (CurrentIndex < 0) CurrentIndex = 0;
-            Save();
+            _ = SaveAsync();
         }
 
         public void Remove(Track track)
@@ -82,7 +82,7 @@ namespace MP3Player.Models
         public void ResetPosition()
         {
             CurrentIndex = 0;
-            Save();
+            _ = SaveAsync();
         }
 
         public string GetIconUri()

@@ -13,16 +13,8 @@ using MP3Player.Managers;
 
 namespace MP3Player.Components
 {
-    [Serializable]
-    public struct SwipeActionData
-    {
-        public string name;
-        public string iconUnicode;
-        public Color color;
-        public Action<Track, TrackListViewItem> onActivate;
-    }
 
-    public class TrackListViewItem : RecyclingListViewItem, IDragHandler, IBeginDragHandler, IEndDragHandler, IPointerClickHandler
+    public class TrackListViewItem : RecyclingListViewItem, IPointerClickHandler
     {
         [SerializeField] private GameObject loadingParent;
         [SerializeField] private GameObject infoParent;
@@ -35,13 +27,9 @@ namespace MP3Player.Components
         [SerializeField] private LoadingBar loadingBar;
 
         private Track track;
-        private Action<Track, TrackListViewItem> onClick, onLeftSwipe, onRightSwipe, onButton;
+        private Action<Track, TrackListViewItem> onClick, onButton;
 
-        private static TrackListViewItem swiped;
-
-        [SerializeField] private Image leftSwipeBg, rightSwipeBg;
-        [SerializeField] private TextMeshProUGUI leftSwipeText, rightSwipeText;
-        [SerializeField] private MaterialIcon leftSwipeIcon, rightSwipeIcon, buttonActionIcon;
+        [SerializeField] private MaterialIcon buttonActionIcon;
         [SerializeField] private GameObject buttonActionParent;
 
         private const float clickThreshold = 0.03f;
@@ -95,25 +83,6 @@ namespace MP3Player.Components
             buttonActionParent.SetActive(false);
         }
 
-        public void SetLeftSwipeAction(SwipeActionData left)
-        {
-            leftSwipeText.text = left.name;
-            leftSwipeIcon.iconUnicode = left.iconUnicode;
-            leftSwipeBg.color = left.color;
-            onLeftSwipe = left.onActivate;
-        }
-
-        public void RemoveLeftSwipeAction() => onLeftSwipe = null;
-        public void RemoveRightSwipeAction() => onRightSwipe = null;
-
-        public void SetRightSwipeAction(SwipeActionData right)
-        {
-            rightSwipeText.text = right.name;
-            rightSwipeIcon.iconUnicode = right.iconUnicode;
-            rightSwipeBg.color = right.color;
-            onRightSwipe = right.onActivate;
-        }
-
         private void SetStatusState(bool state)
         {
             if (state)
@@ -144,17 +113,6 @@ namespace MP3Player.Components
             return sb.ToString();
         }
 
-        private void LeftSwipe()
-        {
-            onLeftSwipe?.Invoke(track, this);
-            EndSwipe(false);
-        }
-
-        private void RightSwipe()
-        {
-            onRightSwipe?.Invoke(track, this);
-            EndSwipe(false);
-        }
         public void OnPointerClick(PointerEventData eventData)
         {
             if (Vector2.Distance(eventData.pressPosition, eventData.position) / Screen.width < clickThreshold)
@@ -165,76 +123,5 @@ namespace MP3Player.Components
         {
             onButton?.Invoke(track, this);
         }
-
-        #region Swipe Action
-
-        private Vector2 initialPos;
-        private Vector2 initialMousePos;
-
-        public void OnBeginDrag(PointerEventData eventData)
-        {
-            ParentList.GetComponent<ScrollRect>().OnBeginDrag(eventData);
-            if (swiped != null) return;
-            swiped = this;
-            initialMousePos = Input.mousePosition;
-            initialPos = transform.localPosition;
-        }
-
-        private bool passedThreshold;
-        public void OnDrag(PointerEventData eventData)
-        {
-            if (Mathf.Abs(initialMousePos.x - Input.mousePosition.x) / Screen.width > 0.05f) passedThreshold = true;
-            if (Mathf.Abs(initialMousePos.y - Input.mousePosition.y) / Screen.width > 0.1f && swiped == this)
-            {
-                transform.DOLocalMove(initialPos, 0.1f);
-                swiped = null;
-                passedThreshold = false;
-            }
-            if (swiped == null || !passedThreshold)
-            {
-                ParentList.GetComponent<ScrollRect>().OnDrag(eventData);
-                return;
-            }
-            if (infoParent.activeSelf)
-            {
-                var delta = eventData.delta.x;
-                transform.localPosition = Vector2.Lerp(transform.localPosition, new Vector2(transform.localPosition.x + delta * 4000 / Screen.width, transform.localPosition.y), 0.20f);
-                if (onLeftSwipe == null)
-                {
-                    var x = transform.localPosition.x;
-                    x = Mathf.Clamp(x, float.MinValue, initialPos.x);
-                    transform.localPosition = new Vector3(x, transform.localPosition.y, transform.localPosition.z);
-                }
-                if (onRightSwipe == null)
-                {
-                    var x = transform.localPosition.x;
-                    x = Mathf.Clamp(x, initialPos.x, float.MaxValue);
-                    transform.localPosition = new Vector3(x, transform.localPosition.y, transform.localPosition.z);
-                }
-            }
-        }
-
-        private void EndSwipe(bool triggerAction = true)
-        {
-            var delta = (Vector2)transform.localPosition - initialPos;
-            if (Mathf.Abs(delta.x) > 200 && triggerAction)
-            {
-                if (delta.x > 0)
-                    LeftSwipe();
-                else
-                    RightSwipe();
-            }
-            transform.DOLocalMove(initialPos, 0.1f);
-            passedThreshold = false;
-            swiped = null;
-        }
-
-        public void OnEndDrag(PointerEventData eventData)
-        {
-            ParentList.GetComponent<ScrollRect>().OnEndDrag(eventData);
-            if (swiped == this) EndSwipe();
-        }
-
-        #endregion Swipe Action
     }
 }

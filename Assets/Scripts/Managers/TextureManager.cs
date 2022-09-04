@@ -38,12 +38,12 @@ namespace MP3Player.Managers
         public void Release()
         {
             refCount--;
-            //Wait some time and dispose
-            if (refCount <= 0) UniTask.Post(async () =>
-            {
-                await UniTask.Delay(10000);
-                Dispose();
-            });
+            //Wait some time and dispose [disabled as UniTask.Delay seems to eat resources]
+            //if (refCount <= 0) UniTask.Post(async () =>
+            //{
+            //    await UniTask.Delay(10000);
+            //    Dispose();
+            //});
         }
 
         public ManagedTexture(Texture2D value, string _id)
@@ -139,7 +139,10 @@ namespace MP3Player.Managers
                 else
                 {
                     //Debug.Log($"Loading JPG/PNG locally, {path}");
+                    await UniTask.SwitchToThreadPool();
                     byte[] data = await File.ReadAllBytesAsync(path);
+                    await UniTask.SwitchToMainThread();
+
                     tex = new Texture2D(1, 1);
                     if (!tex.LoadImage(data)) throw new Exception("ImageConversion failed!");
                 }

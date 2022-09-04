@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace MP3Player.Playback
@@ -31,14 +32,27 @@ namespace MP3Player.Playback
         public override void SetDataSource(string uri)
         {
             prepared = false;
+            _curPos = 0;
             AndroidJNI.AttachCurrentThread();
             CallOnService("showNotification", title, desc, iconUri);
             CallOnService("start", uri);
             AndroidJNI.DetachCurrentThread();
         }
+
+        private float _curPos;
+
+        private async Task UpdatePosition(CancellationToken token = default)
+        {
+            while (true)
+            {
+                _curPos = prepared ? CallOnService<float>("getPosition") : 0;
+                if (token.IsCancellationRequested) return;
+                await Task.Delay(500);
+            }
+        }
         public override float CurPos
         {
-            get => prepared ? CallOnService<float>("getPosition") : 0;
+            get => _curPos;
             set
             {
                 if (prepared)
@@ -68,7 +82,13 @@ namespace MP3Player.Playback
             if (prepared)
                 CallOnService("resume");
         }
-        public override void Dispose() => CallOnService("dispose");
+        public override void Dispose()
+        {
+            updatePosCts.Cancel();
+            CallOnService("dispose");
+        }
+
+        private CancellationTokenSource updatePosCts;
 
         public AndroidPlayer()
         {
@@ -78,6 +98,9 @@ namespace MP3Player.Playback
 
             AndroidJavaClass unityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
             CallOnService("initialize", unityClass.GetStatic<AndroidJavaObject>("currentActivity"), baInterface);
+
+            updatePosCts = new();
+            _ = UpdatePosition(updatePosCts.Token);
         }
 
         private static BackgroundAudioInterface baInterface = new BackgroundAudioInterface();

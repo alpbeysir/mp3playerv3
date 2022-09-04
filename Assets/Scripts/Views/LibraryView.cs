@@ -8,6 +8,7 @@ using MP3Player.Models;
 using MP3Player.Managers;
 using MP3Player.Components;
 using MP3Player.Youtube;
+using Cysharp.Threading.Tasks;
 
 namespace MP3Player.Views
 {
@@ -36,12 +37,12 @@ namespace MP3Player.Views
 
         public override async void Show(params object[] args)
         {
-            await Task.Run(UpdatePlaylists).ConfigureAwait(true);
+            await UniTask.RunOnThreadPool(UpdatePlaylists);
 
             if (listView.RowCount != playlists.Count) listView.RowCount = playlists.Count;
             else listView.Refresh();
 
-            _ = RealYoutube.SyncPlaylistsAsync();
+            _ = UniTask.RunOnThreadPool(RealYoutube.SyncPlaylistsAsync);
         }
 
         private void PlaylistClicked(Playlist playlist)

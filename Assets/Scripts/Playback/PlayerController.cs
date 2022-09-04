@@ -41,14 +41,14 @@ namespace MP3Player.Playback
             state.Playlist = _playlist.Id;
             PlayOverride(Playlist.Get(state.Playlist).GetCurrent());
             Playlist.Get(state.Playlist).Next();
-            state.Save();
+            _ = state.SaveAsync();
         }
 
         public static void PlayOverride(Track track)
         {
             state.PlayQueue.Insert(0, track.Id);
             RequestTrackChange(TrackChangeDirection.Next);
-            state.Save();
+            _ = state.SaveAsync();
         }
 
         public static void AddToQueue(Track track)
@@ -58,7 +58,7 @@ namespace MP3Player.Playback
             {
                 RequestTrackChange(TrackChangeDirection.Next);
             }
-            state.Save();
+            _ = state.SaveAsync();
         }
         public static bool IsInQueue(Track track) => state.PlayQueue.Contains(track.Id);
 
@@ -83,7 +83,7 @@ namespace MP3Player.Playback
                     break;
             }
 
-            state.Save();
+            _ = state.SaveAsync();
 
             if (cts.IsCancellationRequested) return;
             cts.Cancel();
@@ -154,7 +154,7 @@ namespace MP3Player.Playback
             {
                 var trackId = state.PlayQueue[0];
                 state.PlayQueue.RemoveAt(0);
-                state.Save();
+                _ = state.SaveAsync();
                 return Track.Get(trackId);
             }
             else
@@ -168,7 +168,7 @@ namespace MP3Player.Playback
                     return Playlist.Get(state.Playlist).GetCurrent();
                 }
                 Playlist.Get(state.Playlist).Next();
-                state.Save();
+                _ = state.SaveAsync();
                 return track;
             }
         }

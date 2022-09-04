@@ -76,7 +76,7 @@ namespace MP3Player.Youtube
         }
 
         public static async Task SyncPlaylistsAsync()
-        {
+        {  
             try
             {
                 var service = await GetUserServiceAsync();

@@ -22,8 +22,6 @@ namespace MP3Player.Views
 
         [SerializeField] private OptionsView optionsView;
 
-        [SerializeField] private SwipeActionData leftSwipeActionData, rightSwipeActionData;
-
         public int maxResults;
         public int curLoadedResults;
 
