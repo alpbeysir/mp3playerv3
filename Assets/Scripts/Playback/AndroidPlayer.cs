@@ -47,7 +47,7 @@ namespace MP3Player.Playback
             {
                 _curPos = prepared ? CallOnService<float>("getPosition") : 0;
                 if (token.IsCancellationRequested) return;
-                await Task.Delay(500);
+                await Task.Delay(100);
             }
         }
         public override float CurPos

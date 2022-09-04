@@ -139,9 +139,8 @@ namespace MP3Player.Managers
                 else
                 {
                     //Debug.Log($"Loading JPG/PNG locally, {path}");
-                    await UniTask.SwitchToThreadPool();
-                    byte[] data = await File.ReadAllBytesAsync(path);
-                    await UniTask.SwitchToMainThread();
+                    byte[] data = null;
+                    await UniTask.RunOnThreadPool(() => data = File.ReadAllBytes(path));
 
                     tex = new Texture2D(1, 1);
                     if (!tex.LoadImage(data)) throw new Exception("ImageConversion failed!");

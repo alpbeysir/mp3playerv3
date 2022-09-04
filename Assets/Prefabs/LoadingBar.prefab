@@ -108,7 +108,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   loadingImage: {fileID: 7715250823046818510}
   percentageText: {fileID: 7715250823450810854}
-  targetAmount: 0
 --- !u!1 &7715250823450810852
 GameObject:
   m_ObjectHideFlags: 0
@@ -169,7 +168,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:

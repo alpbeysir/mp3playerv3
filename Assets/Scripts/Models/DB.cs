@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using MP3Player.Misc;
 using LiteDB;
 using UnityEngine;
@@ -14,7 +15,7 @@ namespace MP3Player.Models
         public string Id { get; set; }
         public DBObject() { }
 
-        private static Dictionary<string, object> instanceCache = new();
+        private static ConcurrentDictionary<string, object> instanceCache = new();
 
         public static T Get(string id)
         {
@@ -29,20 +30,51 @@ namespace MP3Player.Models
 
             var col = DB.Instance.GetCollection<T>();
             dbObj = col.FindById(id);
+
             if (dbObj == null)
             {
                 dbObj = new();
                 dbObj.Id = id;
-                instanceCache[id] = dbObj;
                 //Debug.Log(string.Format("Database doesn't have {0} with id {1}, creating new instance", typeof(T).Name, id));
-                return dbObj;
             }
             else
             {
-                instanceCache[id] = dbObj;
                 //Debug.Log(string.Format("First access to {0} with id {1}, queried database", typeof(T).Name, id));
-                return dbObj;
             }
+
+            instanceCache[id] = dbObj;
+            return dbObj;
+        }
+
+        public static async Task<T> GetAsync(string id)
+        {
+            if (id == null) return null;
+
+            T dbObj = null;
+            if (instanceCache.ContainsKey(id))
+            {
+                //Debug.Log(string.Format("Cache already has {0} with id {1}, returning cached instance", typeof(T).Name, id));
+                return (T)instanceCache[id];
+            }
+
+            await Task.Run(() => { 
+                var col = DB.Instance.GetCollection<T>();
+                dbObj = col.FindById(id);
+            });
+
+            if (dbObj == null)
+            {
+                dbObj = new();
+                dbObj.Id = id;
+                //Debug.Log(string.Format("Database doesn't have {0} with id {1}, creating new instance", typeof(T).Name, id));
+            }
+            else
+            {
+                //Debug.Log(string.Format("First access to {0} with id {1}, queried database", typeof(T).Name, id));
+            }
+
+            instanceCache[id] = dbObj;
+            return dbObj;
         }
 
         public void Save()
@@ -57,7 +89,7 @@ namespace MP3Player.Models
 
         public void Delete()
         {
-            if (instanceCache.ContainsKey(Id)) instanceCache.Remove(Id);
+            instanceCache.Remove(Id, out _);
             DB.Instance.GetCollection<T>().Delete(Id);
         }
     }

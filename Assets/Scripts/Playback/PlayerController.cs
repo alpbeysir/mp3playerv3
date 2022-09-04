@@ -36,19 +36,19 @@ namespace MP3Player.Playback
         private static float duration;
         private static float posCache;
 
-        public static void SetPlaylist(Playlist _playlist)
+        public static async void SetPlaylist(Playlist _playlist)
         {
             state.Playlist = _playlist.Id;
-            PlayOverride(Playlist.Get(state.Playlist).GetCurrent());
-            Playlist.Get(state.Playlist).Next();
             _ = state.SaveAsync();
+            Playlist pl = await Playlist.GetAsync(state.Playlist);
+            PlayOverride(pl.GetCurrent());
+            pl.Next();
         }
 
         public static void PlayOverride(Track track)
         {
             state.PlayQueue.Insert(0, track.Id);
-            RequestTrackChange(TrackChangeDirection.Next);
-            _ = state.SaveAsync();
+            _ = RequestTrackChange(TrackChangeDirection.Next);
         }
 
         public static void AddToQueue(Track track)
@@ -56,13 +56,11 @@ namespace MP3Player.Playback
             state.PlayQueue.Add(track.Id);
             if (Current == null)
             {
-                RequestTrackChange(TrackChangeDirection.Next);
+                _ = RequestTrackChange(TrackChangeDirection.Next);
             }
-            _ = state.SaveAsync();
         }
-        public static bool IsInQueue(Track track) => state.PlayQueue.Contains(track.Id);
 
-        public static void RequestTrackChange(TrackChangeDirection dir)
+        public static async Task RequestTrackChange(TrackChangeDirection dir)
         {
             switch (dir)
             {
@@ -71,15 +69,36 @@ namespace MP3Player.Playback
                     state.Current = state.History[state.History.Count - 1];
                     state.History.RemoveAt(state.History.Count - 1);
                     break;
-                case TrackChangeDirection.Current:
-                    break;
+
                 case TrackChangeDirection.Next:
                     if (Current != null)
                     {
                         state.History.Add(Current.Id);
                         if (state.History.Count > MAX_HISTORY_LEN) state.History.RemoveRange(0, state.History.Count - MAX_HISTORY_LEN);
                     }
-                    state.Current = GetNextTrack().Id;
+
+                    if (state.PlayQueue.Count > 0)
+                    {
+                        var trackId = state.PlayQueue[0];
+                        state.PlayQueue.RemoveAt(0);
+                        _ = state.SaveAsync();
+                        state.Current = (await Track.GetAsync(trackId)).Id;
+                    }
+                    else
+                    {
+                        var pl = await Playlist.GetAsync(state.Playlist);
+                        var track = pl.GetCurrent();
+                        if (track == null)
+                        {
+                            //TODO handle end of playlist (switch to recommendations) for now just restart playlist
+                            Debug.Log("Reached playlist end");
+                            pl.ResetPosition();
+                            state.Current = pl.GetCurrent().Id;
+                        }
+                        pl.Next();
+                        _ = state.SaveAsync();
+                        state.Current = track.Id;
+                    }
                     break;
             }
 
@@ -88,7 +107,7 @@ namespace MP3Player.Playback
             if (cts.IsCancellationRequested) return;
             cts.Cancel();
             cts = new CancellationTokenSource();
-            Task.Run(() => ChangeTrack(Current, cts.Token), cts.Token);
+            _ = Task.Run(() => ChangeTrack(Current, cts.Token), cts.Token);
         }
 
         public static void Initialize()
@@ -109,7 +128,7 @@ namespace MP3Player.Playback
 
             //TODO load from database here
             state = PlayerState.Get("state");
-            RequestTrackChange(TrackChangeDirection.Current);
+            _ = RequestTrackChange(TrackChangeDirection.Current);
         }
 
         public static void Dispose()
@@ -135,7 +154,7 @@ namespace MP3Player.Playback
         }
         private static void OnPlayerStop()
         {
-            RequestTrackChange(TrackChangeDirection.Next);
+            _ = RequestTrackChange(TrackChangeDirection.Next);
         }
         private static void OnPlayerPrepared()
         {
@@ -148,37 +167,12 @@ namespace MP3Player.Playback
             player.Resume();
         }
 
-        private static Track GetNextTrack()
-        {
-            if (state.PlayQueue.Count > 0)
-            {
-                var trackId = state.PlayQueue[0];
-                state.PlayQueue.RemoveAt(0);
-                _ = state.SaveAsync();
-                return Track.Get(trackId);
-            }
-            else
-            {
-                var track = Playlist.Get(state.Playlist).GetCurrent();
-                if (track == null)
-                {
-                    //TODO handle end of playlist (switch to recommendations) for now just restart playlist
-                    Debug.Log("Reached playlist end");
-                    Playlist.Get(state.Playlist).ResetPosition();
-                    return Playlist.Get(state.Playlist).GetCurrent();
-                }
-                Playlist.Get(state.Playlist).Next();
-                _ = state.SaveAsync();
-                return track;
-            }
-        }
-
         private static void OnDownloadComplete(string id)
         {
             if (Current != null && Current.Id == id)
             {
                 posCache = player.CurPos;
-                RequestTrackChange(TrackChangeDirection.Current);
+                _ = RequestTrackChange(TrackChangeDirection.Current);
             }
         }
 
@@ -206,7 +200,7 @@ namespace MP3Player.Playback
                 {
                     Debug.LogError("Error while loading track!");
                     Debug.LogException(e);
-                    RequestTrackChange(TrackChangeDirection.Next);
+                    _ = RequestTrackChange(TrackChangeDirection.Next);
                 }
             }
         }

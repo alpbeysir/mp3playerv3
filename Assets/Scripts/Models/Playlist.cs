@@ -104,7 +104,7 @@ namespace MP3Player.Models
         {
             var service = await RealYoutube.GetUserServiceAsync();
 
-            var localCandidate = Get(youtubePlaylist.Id);
+            var localCandidate = await GetAsync(youtubePlaylist.Id);
             if (localCandidate != null)
             {
                 //Check ETag
@@ -123,7 +123,7 @@ namespace MP3Player.Models
             {
                 if (service == null) return null;
 
-                Playlist localPlaylist = Get(youtubePlaylist.Id);
+                Playlist localPlaylist = await GetAsync(youtubePlaylist.Id);
                 localPlaylist.Name = youtubePlaylist.Snippet.Title;
                 localPlaylist.Id = youtubePlaylist.Id;
                 localPlaylist.RootETag = youtubePlaylist.ETag;

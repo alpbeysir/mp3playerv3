@@ -506,7 +506,7 @@ namespace MP3Player.Youtube
         protected virtual bool OpenBrowser(string url)
         {
             //Refactored to use Unity API.
-            UnityEngine.Application.OpenURL(url);
+            Cysharp.Threading.Tasks.UniTask.Post(() => UnityEngine.Application.OpenURL(url));        
             return true;
         }
 

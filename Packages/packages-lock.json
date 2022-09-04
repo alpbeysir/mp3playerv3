@@ -1,5 +1,14 @@
 {
   "dependencies": {
+    "com.netpyoung.webp": {
+      "version": "https://github.com/netpyoung/unity.webp.git?path=unity_project/Assets/unity.webp#0.3.8",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.system-community.systemruntimecompilerservicesunsafe": "6.0.0"
+      },
+      "hash": "90abbca56cf6c870a0a679f9f496dac603e895b7"
+    },
     "com.system-community.systemruntimecompilerservicesunsafe": {
       "version": "https://github.com/system-community/SystemRuntimeCompilerServicesUnsafe.git?path=Assets/_Root#6.0.0",
       "depth": 0,

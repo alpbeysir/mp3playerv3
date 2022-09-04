@@ -30,9 +30,9 @@ namespace MP3Player.Views
         /// Takes guid of playlist as argument, shows track list
         /// </summary>
         /// <param name="args"></param>
-        public override void Show(params object[] args)
+        public override async void Show(params object[] args)
         {
-            playlist = Playlist.Get(args[0] as string);
+            playlist = await Playlist.GetAsync(args[0] as string);
 
             iconDisplay.SetLoading();
             _ = TextureManager.Texture2DFromUrlAsync(playlist.GetIconUri()).ContinueWith(tex => iconDisplay.SetImage(tex));
