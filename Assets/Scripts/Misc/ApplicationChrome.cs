@@ -6,33 +6,36 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-/**
- * @author zeh fernando
- */
-class ApplicationChrome
+namespace MP3Player.Misc
 {
 
     /**
-     * Manipulates the system application chrome to change the way the status bar and navigation bar work
-     *
-     * References:
-     * . http://developer.android.com/reference/android/view/View.html#setSystemUiVisibility(int)
-     * . http://forum.unity3d.com/threads/calling-setsystemuivisibility.139445/#post-952946
-     * . http://developer.android.com/reference/android/view/WindowManager.LayoutParams.html#FLAG_LAYOUT_IN_SCREEN
-     **/
-
-    // Enums
-    public enum States
+     * @author zeh fernando
+     */
+    class ApplicationChrome
     {
-        Unknown,
-        Visible,
-        VisibleOverContent,
-        TranslucentOverContent,
-        Hidden
-    }
 
-    // Constants
-    private const uint DEFAULT_BACKGROUND_COLOR = 0xff000000;
+        /**
+         * Manipulates the system application chrome to change the way the status bar and navigation bar work
+         *
+         * References:
+         * . http://developer.android.com/reference/android/view/View.html#setSystemUiVisibility(int)
+         * . http://forum.unity3d.com/threads/calling-setsystemuivisibility.139445/#post-952946
+         * . http://developer.android.com/reference/android/view/WindowManager.LayoutParams.html#FLAG_LAYOUT_IN_SCREEN
+         **/
+
+        // Enums
+        public enum States
+        {
+            Unknown,
+            Visible,
+            VisibleOverContent,
+            TranslucentOverContent,
+            Hidden
+        }
+
+        // Constants
+        private const uint DEFAULT_BACKGROUND_COLOR = 0xff000000;
 
 #if USE_ANDROID
         // Original Android flags
@@ -58,41 +61,41 @@ class ApplicationChrome
         private static int flagsValue;
 #endif
 
-    // Properties
-    private static States _statusBarState;
-    private static States _navigationBarState;
+        // Properties
+        private static States _statusBarState;
+        private static States _navigationBarState;
 
-    private static uint _statusBarColor = DEFAULT_BACKGROUND_COLOR;
-    private static uint _navigationBarColor = DEFAULT_BACKGROUND_COLOR;
+        private static uint _statusBarColor = DEFAULT_BACKGROUND_COLOR;
+        private static uint _navigationBarColor = DEFAULT_BACKGROUND_COLOR;
 
-    private static bool _isStatusBarTranslucent; // Just so we know whether its translucent when hidden or not
-    private static bool _isNavigationBarTranslucent;
+        private static bool _isStatusBarTranslucent; // Just so we know whether its translucent when hidden or not
+        private static bool _isNavigationBarTranslucent;
 
-    private static bool _dimmed;
+        private static bool _dimmed;
 
 
-    // ================================================================================================================
-    // INTERNAL INTERFACE ---------------------------------------------------------------------------------------------
+        // ================================================================================================================
+        // INTERNAL INTERFACE ---------------------------------------------------------------------------------------------
 
-    static ApplicationChrome()
-    {
-        applyUIStates();
-        applyUIColors();
-    }
+        static ApplicationChrome()
+        {
+            applyUIStates();
+            applyUIColors();
+        }
 
-    private static void applyUIStates()
-    {
+        private static void applyUIStates()
+        {
 #if USE_ANDROID
             applyUIStatesAndroid();
 #endif
-    }
+        }
 
-    private static void applyUIColors()
-    {
+        private static void applyUIColors()
+        {
 #if USE_ANDROID
             applyUIColorsAndroid();
 #endif
-    }
+        }
 
 #if USE_ANDROID
 
@@ -222,72 +225,73 @@ class ApplicationChrome
 
 #endif
 
-    // ================================================================================================================
-    // ACCESSOR INTERFACE ---------------------------------------------------------------------------------------------
+        // ================================================================================================================
+        // ACCESSOR INTERFACE ---------------------------------------------------------------------------------------------
 
-    public static States navigationBarState
-    {
-        get { return _navigationBarState; }
-        set
+        public static States navigationBarState
         {
-            if (_navigationBarState != value)
+            get { return _navigationBarState; }
+            set
             {
-                _navigationBarState = value;
-                applyUIStates();
+                if (_navigationBarState != value)
+                {
+                    _navigationBarState = value;
+                    applyUIStates();
+                }
             }
         }
-    }
 
-    public static States statusBarState
-    {
-        get { return _statusBarState; }
-        set
+        public static States statusBarState
         {
-            if (_statusBarState != value)
+            get { return _statusBarState; }
+            set
             {
-                _statusBarState = value;
-                applyUIStates();
+                if (_statusBarState != value)
+                {
+                    _statusBarState = value;
+                    applyUIStates();
+                }
             }
         }
-    }
 
-    public static bool dimmed
-    {
-        get { return _dimmed; }
-        set
+        public static bool dimmed
         {
-            if (_dimmed != value)
+            get { return _dimmed; }
+            set
             {
-                _dimmed = value;
-                applyUIStates();
+                if (_dimmed != value)
+                {
+                    _dimmed = value;
+                    applyUIStates();
+                }
             }
         }
-    }
 
-    public static uint statusBarColor
-    {
-        get { return _statusBarColor; }
-        set
+        public static uint statusBarColor
         {
-            if (_statusBarColor != value)
+            get { return _statusBarColor; }
+            set
             {
-                _statusBarColor = value;
-                applyUIColors();
-                applyUIStates();
+                if (_statusBarColor != value)
+                {
+                    _statusBarColor = value;
+                    applyUIColors();
+                    applyUIStates();
+                }
             }
         }
-    }
 
-    public static uint navigationBarColor
-    {
-        get { return _navigationBarColor; }
-        set
+        public static uint navigationBarColor
         {
-            if (_navigationBarColor != value)
+            get { return _navigationBarColor; }
+            set
             {
-                _navigationBarColor = value;
-                applyUIColors();
-                applyUIStates();
+                if (_navigationBarColor != value)
+                {
+                    _navigationBarColor = value;
+                    applyUIColors();
+                    applyUIStates();
+                }
             }
         }
     }

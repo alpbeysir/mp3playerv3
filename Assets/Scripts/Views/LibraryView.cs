@@ -3,46 +3,60 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
-using MP3Player;
+using System.Threading.Tasks;
+using MP3Player.Models;
+using MP3Player.Managers;
+using MP3Player.Components;
+using MP3Player.Youtube;
 
-public class LibraryView : UIScreen
+namespace MP3Player.Views
 {
-    [SerializeField] private RecyclingListView listView;
-    [SerializeField] private PlaylistView playlistView;
-
-    private IEnumerable<Playlist> playlists;
-    
-    private void Awake()
+    public class LibraryView : UIView
     {
-        listView.ItemCallback += PopulateDelegate;
-    }
+        [SerializeField] private RecyclingListView listView;
+        [SerializeField] private PlaylistView playlistView;
 
-    private void PopulateDelegate(RecyclingListViewItem item, int rowIndex)
-    {
-        var info = item as PlaylistInfo;
-        info.Populate(playlists.ElementAt(rowIndex), PlaylistClicked);
-    }
+        private List<string> playlists;
 
-    public override void Show(params object[] args)
-    {
-        playlists = DB.Instance.GetCollection<Playlist>().FindAll();
-        if (listView.RowCount != playlists.Count()) listView.RowCount = playlists.Count();
-        else listView.Refresh();
-    }
+        private void Awake()
+        {
+            listView.ItemCallback += PopulateDelegate;
+        }
 
-    private void PlaylistClicked(Playlist playlist)
-    {
-        ScreenManager.Instance.ShowOther(playlistView, playlist.Id);
-    }
+        private void PopulateDelegate(RecyclingListViewItem item, int rowIndex)
+        {
+            var info = item as PlaylistListViewItem;
+            info.Populate(Playlist.Get(playlists[rowIndex]), PlaylistClicked);
+        }
 
-    public void Add()
-    {
-        //TODO new playlist wizard
-        var added = new Playlist();
-        added.Id = Utils.GetUniqueKey();
-        added.Name = "New Playlist";
-        added.Save();
-        listView.ScrollToRow(listView.RowCount - 1);
-        Show();
+        private void UpdatePlaylists()
+        {
+            playlists = DB.Instance.GetCollection<Playlist>().FindAll().Select(p => p.Id).ToList();
+        }
+
+        public override async void Show(params object[] args)
+        {
+            await Task.Run(UpdatePlaylists).ConfigureAwait(true);
+
+            if (listView.RowCount != playlists.Count) listView.RowCount = playlists.Count;
+            else listView.Refresh();
+
+            _ = RealYoutube.SyncPlaylistsAsync();
+        }
+
+        private void PlaylistClicked(Playlist playlist)
+        {
+            ScreenManager.Instance.ShowOther(playlistView, playlist.Id);
+        }
+
+        public void Add()
+        {
+            //TODO new playlist wizard
+            var added = new Playlist();
+            added.Name = "New Playlist";
+            added.Source = PlaylistSource.Local;
+            added.Save();
+            Show();
+        }
     }
 }

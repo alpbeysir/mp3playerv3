@@ -3,27 +3,37 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Cysharp.Threading.Tasks;
+using MP3Player.Managers;
 
-public class ImageView : MonoBehaviour
+namespace MP3Player.Components
 {
-    [SerializeField] private RawImage image;
-    [SerializeField] private Texture2D loadingTex;
-    [SerializeField] private AspectRatioFitter aspectRatioFitter;
-    public async UniTask Set(string url)
+    public class ImageView : MonoBehaviour
     {
-        //Set loading state
-        if (image.texture != loadingTex)
+        [SerializeField] private RawImage image;
+        [SerializeField] private Texture2D loadingTex;
+        [SerializeField] private AspectRatioFitter aspectRatioFitter;
+
+        private ManagedTexture mt;
+
+        public void SetLoading()
         {
-            DestroyImmediate(image.texture, true);
+            mt?.Release();
+            mt = null;
             image.texture = loadingTex;
         }
-
-        var tex = await TextureUtils.Texture2DFromUrlAsync(url);
-        if (tex != null)
+        public void SetImage(ManagedTexture _mt)
         {
-            image.texture = tex;
-            aspectRatioFitter.aspectRatio = (float)tex.width / tex.height;
+            mt = _mt;
+            //Set loading state
+            if (image.texture != loadingTex)
+            {
+                mt?.Release();
+                image.texture = loadingTex;
+            }
+
+            var newTex = mt.Get();
+            image.texture = newTex;
+            aspectRatioFitter.aspectRatio = (float)newTex.width / newTex.height;
         }
-        else image.texture = loadingTex;
     }
 }

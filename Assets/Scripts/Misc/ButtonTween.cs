@@ -6,45 +6,48 @@ using UnityEngine.EventSystems;
 using DG.Tweening;
 using Cysharp.Threading.Tasks;
 
-public class ButtonTween : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler
+namespace MP3Player.Misc
 {
-    [SerializeField] private Transform target;
-    [SerializeField] private float scale = 0.9f;
-    public new bool enabled = true;
-    private bool tweening;
-    public void OnPointerDown(PointerEventData eventData)
+    public class ButtonTween : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler
     {
-        if (enabled)
-            StartCoroutine(WaitAndAnimate(0.05f));
-    }
-
-    private IEnumerator WaitAndAnimate(float time)
-    {
-        Vector2 firstPos = Input.mousePosition;
-        yield return new WaitForSecondsRealtime(time);
-        if (Vector2.Distance(firstPos, Input.mousePosition) < Screen.dpi * 0.1f && !tweening) 
-        { 
-            target.DOScale(scale, 0.1f).OnComplete(() => tweening = false);
-            tweening = true;
-        }
-    }
-
-    public async void OnPointerUp(PointerEventData eventData)
-    {
-        await UniTask.WaitUntil(() => !tweening);
-        if (enabled)
+        [SerializeField] private Transform target;
+        [SerializeField] private float scale = 0.9f;
+        public new bool enabled = true;
+        private bool tweening;
+        public void OnPointerDown(PointerEventData eventData)
         {
-            target.DOScale(1f, 0.1f).OnComplete(() => tweening = false);
-            tweening = true;
+            if (enabled)
+                StartCoroutine(WaitAndAnimate(0.05f));
         }
-    }
 
-    public void OnPointerExit(PointerEventData eventData)
-    {
-        if (enabled && !tweening)
+        private IEnumerator WaitAndAnimate(float time)
         {
-            target.DOScale(1f, 0.1f).OnComplete(() => tweening = false);
-            tweening = true;
+            Vector2 firstPos = Input.mousePosition;
+            yield return new WaitForSecondsRealtime(time);
+            if (Vector2.Distance(firstPos, Input.mousePosition) < Screen.dpi * 0.1f && !tweening)
+            {
+                target.DOScale(scale, 0.1f).OnComplete(() => tweening = false);
+                tweening = true;
+            }
+        }
+
+        public async void OnPointerUp(PointerEventData eventData)
+        {
+            await UniTask.WaitUntil(() => !tweening);
+            if (enabled)
+            {
+                target.DOScale(1f, 0.1f).OnComplete(() => tweening = false);
+                tweening = true;
+            }
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            if (enabled && !tweening)
+            {
+                target.DOScale(1f, 0.1f).OnComplete(() => tweening = false);
+                tweening = true;
+            }
         }
     }
 }

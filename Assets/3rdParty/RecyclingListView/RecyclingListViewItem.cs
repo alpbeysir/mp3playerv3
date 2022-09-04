@@ -1,40 +1,51 @@
 using System;
 using UnityEngine;
 
-/// <summary>
-/// You should subclass this to provide fast access to any data you need to populate
-/// this item on demand.
-/// </summary>
-[RequireComponent(typeof(RectTransform))]
-public class RecyclingListViewItem : MonoBehaviour {
+namespace MP3Player.Components
+{
 
-    private RecyclingListView parentList;
-    public RecyclingListView ParentList {
-        get => parentList;
-    }
+    /// <summary>
+    /// You should subclass this to provide fast access to any data you need to populate
+    /// this item on demand.
+    /// </summary>
+    [RequireComponent(typeof(RectTransform))]
+    public class RecyclingListViewItem : MonoBehaviour
+    {
 
-    private int currentRow;
-    public int CurrentRow {
-        get => currentRow;
-    }
-
-    private RectTransform rectTransform;
-    public RectTransform RectTransform {
-        get {
-            if (rectTransform == null)
-                rectTransform = GetComponent<RectTransform>();
-            return rectTransform;
+        private RecyclingListView parentList;
+        public RecyclingListView ParentList
+        {
+            get => parentList;
         }
-    }
 
-    private void Awake() {
-        rectTransform = GetComponent<RectTransform>();
-    }
+        private int currentRow;
+        public int CurrentRow
+        {
+            get => currentRow;
+        }
 
-    public void NotifyCurrentAssignment(RecyclingListView v, int row) {
-        parentList = v;
-        currentRow = row;
+        private RectTransform rectTransform;
+        public RectTransform RectTransform
+        {
+            get
+            {
+                if (rectTransform == null)
+                    rectTransform = GetComponent<RectTransform>();
+                return rectTransform;
+            }
+        }
+
+        private void Awake()
+        {
+            rectTransform = GetComponent<RectTransform>();
+        }
+
+        public void NotifyCurrentAssignment(RecyclingListView v, int row)
+        {
+            parentList = v;
+            currentRow = row;
+        }
+
+
     }
-    
-    
 }

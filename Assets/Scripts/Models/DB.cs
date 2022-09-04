@@ -1,76 +1,83 @@
 ﻿using System;
 using System.Collections.Generic;
+using MP3Player.Misc;
 using LiteDB;
 using UnityEngine;
+using System.Linq;
 
-public class DBObject<T> where T : DBObject<T>, new()
+namespace MP3Player.Models
 {
-    public string Id { get; set; }
-    public DBObject() { }
-
-    private static Dictionary<string, object> instanceCache = new();
-
-    public static T Get(string id)
+    public class DBObject<T> where T : DBObject<T>, new()
     {
-        if (id == null) return null;
+        public string Id { get; set; }
+        public DBObject() { }
 
-        T dbObj;
-        if (instanceCache.ContainsKey(id))
+        private static Dictionary<string, object> instanceCache = new();
+
+        public Action<T> OnChanged;
+
+        public static T Get(string id)
         {
-            Debug.Log(string.Format("Cache already has {0} with id {1}, returning cached instance", typeof(T).Name, id));
-            return (T)instanceCache[id];
+            if (id == null) return null;
+
+            T dbObj;
+            if (instanceCache.ContainsKey(id))
+            {
+                //Debug.Log(string.Format("Cache already has {0} with id {1}, returning cached instance", typeof(T).Name, id));
+                return (T)instanceCache[id];
+            }
+
+            var col = DB.Instance.GetCollection<T>();
+            dbObj = col.FindById(id);
+            if (dbObj == null)
+            {
+                dbObj = new();
+                dbObj.Id = id;
+                instanceCache[id] = dbObj;
+                //Debug.Log(string.Format("Database doesn't have {0} with id {1}, creating new instance", typeof(T).Name, id));
+                return dbObj;
+            }
+            else
+            {
+                instanceCache[id] = dbObj;
+                //Debug.Log(string.Format("First access to {0} with id {1}, queried database", typeof(T).Name, id));
+                return dbObj;
+            }
         }
 
-        var col = DB.Instance.GetCollection<T>();
-        dbObj = col.FindById(id);
-        if (dbObj == null)
+        public void Save()
         {
-            dbObj = new();
-            dbObj.Id = id;
-            instanceCache[id] = dbObj;
-            Debug.Log(string.Format("Database doesn't have {0} with id {1}, creating new instance", typeof(T).Name, id));
-            return dbObj;
+            DB.Instance.GetCollection<T>().Upsert((T)this);
+            OnChanged?.Invoke((T)this);
         }
-        else
+
+        public void Delete()
         {
-            instanceCache[id] = dbObj;
-            Debug.Log(string.Format("First access to {0} with id {1}, queried database", typeof(T).Name, id));
-            return dbObj;
+            if (instanceCache.ContainsKey(Id)) instanceCache.Remove(Id);
+            DB.Instance.GetCollection<T>().Delete(Id);
         }
     }
 
-    public void Save()
+    public static class DB
     {
-        DB.Instance.GetCollection<T>().Upsert((T)this);
-    }
+        private static LiteDatabase db;
+        public static LiteDatabase Instance
+        {
+            get
+            {
+                //Make sure this /db directory exists
+                Utils.CreateDirFromPath(Utils.DataPath + "db");
+                if (db == null) db = new LiteDatabase(Utils.DataPath + "db");
+                return db;
+            }
+        }
 
-    public void Delete()
-    {
-        if (instanceCache.ContainsKey(Id)) instanceCache.Remove(Id);
-        DB.Instance.GetCollection<T>().Delete(Id);
+        public static void Dispose()
+        {
+            if (db == null) return;
+
+            db.Dispose();
+            db = null;
+        }
     }
 }
-
-public static class DB
-{
-    private static LiteDatabase db;
-    public static LiteDatabase Instance
-    {
-        get
-        {
-            //Make sure this /db directory exists
-            Utils.CreateDirFromPath(Utils.DataPath + "db");
-            if (db == null) db = new LiteDatabase(Utils.DataPath + "db");
-            return db;
-        }
-    }
-
-    public static void Dispose()
-    {
-        if (db == null) return;
-
-        db.Dispose();
-        db = null;
-    }
-}
-
