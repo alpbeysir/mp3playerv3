@@ -7,6 +7,7 @@ using System.Threading;
 using Google.Apis.Services;
 using MP3Player.Models;
 using UnityEngine;
+using System.Linq;
 
 namespace MP3Player.Youtube
 {
@@ -86,6 +87,13 @@ namespace MP3Player.Youtube
                 playlistReq.Mine = true;
                 playlistReq.MaxResults = 50;
                 var playlistResp = await playlistReq.ExecuteAsync();
+
+                foreach (var existingPlaylist in DB.Instance.GetCollection<Playlist>().FindAll().Where(p => p.Source == PlaylistSource.Youtube))
+                {
+                    //Check if this playlist was deleted from YouTube
+                    if (!playlistResp.Items.Any(yp => yp.Id == existingPlaylist.Id))                 
+                        existingPlaylist.Delete();      
+                }
 
                 foreach (var youtubePlaylist in playlistResp.Items)
                 {

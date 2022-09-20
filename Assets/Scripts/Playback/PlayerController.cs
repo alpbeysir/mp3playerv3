@@ -40,6 +40,7 @@ namespace MP3Player.Playback
         public static async void SetPlaylist(Playlist _playlist)
         {
             state.Playlist = _playlist.Id;
+            state.PlayQueue.Clear();
             _ = state.SaveAsync();
             Playlist pl = await Playlist.GetAsync(state.Playlist);
             PlayOverride(pl.GetCurrent());
@@ -127,7 +128,6 @@ namespace MP3Player.Playback
 
             cts = new();
 
-            //TODO load from database here
             state = PlayerState.Get("state");
             _ = RequestTrackChange(TrackChangeDirection.Current);
         }

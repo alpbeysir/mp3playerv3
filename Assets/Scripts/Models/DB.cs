@@ -12,7 +12,7 @@ namespace MP3Player.Models
 {
     public class DBObject<T> where T : DBObject<T>, new()
     {
-        public string Id { get; set; }
+        public string Id { get; protected set; }
         public DBObject() { }
 
         private static ConcurrentDictionary<string, object> instanceCache = new();
