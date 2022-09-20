@@ -83,7 +83,8 @@ namespace MP3Player.Managers
                 Utils.CreateDirFromPath(path);
                 await FakeYoutube.Instance.Videos.Streams.DownloadAsync(streamInfo, path, download.p, download.cts.Token);
 
-                //Download thumbnails as well, will cause memory leak!!! Need to refactor TextureUtils anyway
+                download.cts.Token.ThrowIfCancellationRequested();
+
                 _ = TextureManager.Texture2DFromUrlAsync(track.LowResThumbnailUrl);
                 _ = TextureManager.Texture2DFromUrlAsync(track.HighResThumbnailUrl);
 

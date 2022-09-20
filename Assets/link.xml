@@ -8,4 +8,7 @@
         <namespace fullname="LiteDB" preserve="all" />
         <namespace fullname="LiteDB.Engine" preserve="all" />
     </assembly>
+  <assembly fullname="YoutubeExplode">
+    <namespace fullname="YoutubeExplode.*" preserve="all" />
+  </assembly>
 </linker>

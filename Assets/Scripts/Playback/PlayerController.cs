@@ -30,21 +30,15 @@ namespace MP3Player.Playback
 
         private static PlayerState state;
 
-        private const int MAX_HISTORY_LEN = 250;
-
-        public static Track Current => Track.Get(state.Current);
+        public static Track Current => Track.Get(state.CurrentTrackId);
 
         private static float duration;
         private static float posCache;
 
-        public static async void SetPlaylist(Playlist _playlist)
+        public static void SetPlaylist(Playlist _playlist)
         {
-            state.Playlist = _playlist.Id;
-            state.PlayQueue.Clear();
-            _ = state.SaveAsync();
-            Playlist pl = await Playlist.GetAsync(state.Playlist);
-            PlayOverride(pl.GetCurrent());
-            pl.Next();
+            state.SetPlaylist(_playlist.Id);
+            _ = RequestTrackChange(TrackChangeDirection.Next);
         }
 
         public static void PlayOverride(Track track)
@@ -64,47 +58,7 @@ namespace MP3Player.Playback
 
         public static async Task RequestTrackChange(TrackChangeDirection dir)
         {
-            switch (dir)
-            {
-                case TrackChangeDirection.Previous:
-                    state.PlayQueue.Insert(0, Current.Id);
-                    state.Current = state.History[state.History.Count - 1];
-                    state.History.RemoveAt(state.History.Count - 1);
-                    break;
-
-                case TrackChangeDirection.Next:
-                    if (Current != null)
-                    {
-                        state.History.Add(Current.Id);
-                        if (state.History.Count > MAX_HISTORY_LEN) state.History.RemoveRange(0, state.History.Count - MAX_HISTORY_LEN);
-                    }
-
-                    if (state.PlayQueue.Count > 0)
-                    {
-                        var trackId = state.PlayQueue[0];
-                        state.PlayQueue.RemoveAt(0);
-                        _ = state.SaveAsync();
-                        state.Current = (await Track.GetAsync(trackId)).Id;
-                    }
-                    else
-                    {
-                        var pl = await Playlist.GetAsync(state.Playlist);
-                        var track = pl.GetCurrent();
-                        if (track == null)
-                        {
-                            //TODO handle end of playlist (switch to recommendations) for now just restart playlist
-                            Debug.Log("Reached playlist end");
-                            pl.ResetPosition();
-                            state.Current = pl.GetCurrent().Id;
-                        }
-                        pl.Next();
-                        _ = state.SaveAsync();
-                        state.Current = track.Id;
-                    }
-                    break;
-            }
-
-            _ = state.SaveAsync();
+            await state.Move(dir);
 
             if (cts.IsCancellationRequested) return;
             cts.Cancel();
@@ -115,9 +69,9 @@ namespace MP3Player.Playback
         public static void Initialize()
         {
             if (Application.platform == RuntimePlatform.Android) player = new AndroidPlayer();
-#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+            #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
             else if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer) player = new WindowsPlayer();
-#endif
+            #endif
             else Debug.LogError("Platform not supported!");
 
             AudioPlayer.OnStop += OnPlayerStop;
@@ -179,15 +133,15 @@ namespace MP3Player.Playback
 
         private static void ChangeTrack(Track track, CancellationToken token)
         {
-            state.Current = track.Id;
+            state.CurrentTrackId = track.Id;
             token.ThrowIfCancellationRequested();
             try
             {
                 UniTask.Post(OnTrackChanged);
+
                 var mediaUri = track.GetMediaUri(token).Result;
                 token.ThrowIfCancellationRequested();
 
-                //TODO refactor notification back into original format, current design causes issues
                 if (Application.platform == RuntimePlatform.Android)
                     AndroidPlayer.SetNotificationData(Current.Title, Current.ChannelName, TextureManager.TryGetLocalUri(Current.LowResThumbnailUrl));
 
@@ -205,5 +159,6 @@ namespace MP3Player.Playback
                 }
             }
         }
+
     }
 }

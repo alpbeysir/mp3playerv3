@@ -7,7 +7,7 @@ namespace MP3Player.Playback
 {
     public class AndroidPlayer : AudioPlayer
     {
-        public class BackgroundAudioInterface : AndroidJavaProxy
+        private class BackgroundAudioInterface : AndroidJavaProxy
         {
             public BackgroundAudioInterface() : base("com.alpbeysir.backgroundaudio.BackgroundAudioInterface") { }
 
@@ -26,6 +26,11 @@ namespace MP3Player.Playback
             private void Error(int code) => Debug.Log($"Error called with {code}");
         }
 
+        private static readonly BackgroundAudioInterface baInterface = new BackgroundAudioInterface();
+        private static AndroidJavaClass service;
+        private static bool prepared;
+        private readonly CancellationTokenSource updatePosCts;
+
         public override void SetDataSource(string uri)
         {
             prepared = false;
@@ -43,7 +48,7 @@ namespace MP3Player.Playback
             {
                 _curPos = prepared ? CallOnService<float>("getPosition") : 0;
                 if (token.IsCancellationRequested) return;
-                await Task.Delay(50);
+                await Task.Delay(25);
             }
         }
         public override float CurPos
@@ -84,8 +89,6 @@ namespace MP3Player.Playback
             CallOnService("dispose");
         }
 
-        private CancellationTokenSource updatePosCts;
-
         public AndroidPlayer()
         {
             if (Application.platform != RuntimePlatform.Android) return;
@@ -98,10 +101,6 @@ namespace MP3Player.Playback
             updatePosCts = new();
             _ = UpdatePosition(updatePosCts.Token);
         }
-
-        private static BackgroundAudioInterface baInterface = new BackgroundAudioInterface();
-        private static AndroidJavaClass service;
-        private static bool prepared;
 
         private static void CallOnService(string method, params object[] args) => service.CallStatic(method, args);
         private static T CallOnService<T>(string method, params object[] args) => service.CallStatic<T>(method, args);
