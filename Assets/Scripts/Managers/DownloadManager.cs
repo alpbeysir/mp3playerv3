@@ -46,7 +46,7 @@ namespace MP3Player.Managers
             if (track.AvailableOffline() && PlayerController.Current.Id != track.Id) File.Delete(track.GetMediaUri().Result);
         }
 
-        public static async Task DownloadAsync(Track track, IStreamInfo streamInfo = null)
+        public static async Task DownloadAsync(Track track)
         {
             string id = track.Id;
             string temp;
@@ -78,7 +78,7 @@ namespace MP3Player.Managers
                 Stopwatch timer = new();
                 timer.Start();
 
-                if (streamInfo == null) streamInfo = await track.GetAudioOnlyStreamInfoAsync(download.cts.Token);
+                IStreamInfo streamInfo = await track.GetAudioOnlyStreamInfoAsync(download.cts.Token);
                 var path = Utils.MediaPath + string.Format("{0}.{1}", id, streamInfo.Container.Name);
                 Utils.CreateDirFromPath(path);
                 await FakeYoutube.Instance.Videos.Streams.DownloadAsync(streamInfo, path, download.p, download.cts.Token);

@@ -103,7 +103,7 @@ namespace MP3Player.Models
         public async Task<IStreamInfo> GetAudioOnlyStreamInfoAsync(CancellationToken token = default)
         {
             StreamManifest streamManifest = await FakeYoutube.Instance.Videos.Streams.GetManifestAsync(Id, token);
-            var streamInfo = streamManifest.GetMuxedStreams().OrderBy(s => s.Bitrate).TryGetWithHighestBitrate();
+            var streamInfo = streamManifest.GetAudioOnlyStreams().OrderBy(s => s.Bitrate).TryGetWithHighestBitrate();
             return streamInfo;
         }
 

@@ -19,6 +19,7 @@ namespace MP3Player.Playback
         public static Action OnPlayerStateChanged;
 
         public static float CurPos { get => player.CurPos; set => player.CurPos = value; }
+        public static float Volume { get => player.Volume; set => player.Volume = value; }
         public static bool IsPaused => player.IsPaused;
         public static float Duration => duration;
         public static void Pause() => player.Pause();

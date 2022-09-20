@@ -3,18 +3,17 @@ using UnityEngine.UI;
 using TMPro;
 using System;
 using Cysharp.Threading.Tasks;
-using MP3Player.Models;
 using MP3Player.Managers;
 using MP3Player.Components;
 using MP3Player.Playback;
-using System.Threading.Tasks;
+using System.Threading;
 
 namespace MP3Player.Views
 {
     public class PlayerView : UIView
     {
         [SerializeField] private RectTransform imageParent;
-        [SerializeField] private ImageView thumbnail;
+        [SerializeField] private ImageView imageView;
         [SerializeField] private VideoView videoView;
         [SerializeField] private TextMeshProUGUI titleDisplay;
         [SerializeField] private TextMeshProUGUI channelDisplay;
@@ -34,27 +33,6 @@ namespace MP3Player.Views
             PlayerController.OnTrackChanged += OnTrackChanged;
 
             targetImageParentHeight = imageParent.rect.height;
-        }
-
-        private void OnTrackChanged()
-        {
-            SetPlayerControlInteractivity(true);
-
-            var track = PlayerController.Current;
-
-            thumbnail.SetLoading();
-            //TranslucentBackground.Instance.SetLoading();
-            _ = TextureManager.Texture2DFromUrlAsync(track.HighResThumbnailUrl).ContinueWith(mt =>
-            {
-                thumbnail.SetImage(mt);
-                TranslucentBackground.Instance.SetImage(mt);
-            });
-
-            titleDisplay.text = track.Title;
-            channelDisplay.text = track.ChannelName;
-            durationDisplay.text = new TimeSpan(long.Parse(track.Duration)).ToString("mm\\:ss");
-
-            _ = videoView.SetTrack(track);
         }
 
         private void Update()
@@ -78,11 +56,50 @@ namespace MP3Player.Views
                 imageParent.sizeDelta = v;
                 LayoutRebuilder.MarkLayoutForRebuild((RectTransform)imageParent.parent.transform);
             }
-        }      
+
+            //Keyboard playback controls
+            if (Input.GetKeyDown(KeyCode.Space))
+                PlayPausePressed();
+
+            if (Input.GetKeyDown(KeyCode.LeftArrow))
+                PreviousPressed();
+
+            if (Input.GetKeyDown(KeyCode.RightArrow))
+                NextPressed();
+        }
+
+        private void OnTrackChanged()
+        {
+            SetPlayerControlInteractivity(true);
+
+            var track = PlayerController.Current;
+
+            imageView.SetLoading();
+            _ = TextureManager.Texture2DFromUrlAsync(track.HighResThumbnailUrl).ContinueWith(mt =>
+            {
+                imageView.SetImage(mt);
+                TranslucentBackground.Instance.SetImage(mt);
+            });
+
+            titleDisplay.text = track.Title;
+            channelDisplay.text = track.ChannelName;
+            durationDisplay.text = new TimeSpan(long.Parse(track.Duration)).ToString("mm\\:ss");
+
+            if (videoView.gameObject.activeSelf)
+                videoView.RequestTrackUpdate();
+            else
+                videoView.Release();
+        }
 
         private void OnPlayerStateChanged()
         {
-            UpdatePlayPauseState();
+            playIcon.SetActive(PlayerController.IsPaused);
+            pauseIcon.SetActive(!PlayerController.IsPaused);
+
+            if (PlayerController.IsPaused)
+                videoView.Pause();
+            else
+                videoView.Play();
         }
 
         public override void Show(params object[] args)
@@ -96,7 +113,7 @@ namespace MP3Player.Views
         public void PreviousPressed()
         {
             SetPlayerControlInteractivity(false);
-            PlayerController.RequestTrackChange(TrackChangeDirection.Previous);
+            _ = PlayerController.RequestTrackChange(TrackChangeDirection.Previous);
         }
         public void PlayPausePressed()
         {
@@ -106,30 +123,28 @@ namespace MP3Player.Views
         public void NextPressed()
         {
             SetPlayerControlInteractivity(false);
-            PlayerController.RequestTrackChange(TrackChangeDirection.Next);
+            _ = PlayerController.RequestTrackChange(TrackChangeDirection.Next);
         }
         public void SeekBarPressed()
         {
             PlayerController.CurPos = seekBar.value * PlayerController.Duration;
         }
+
         public void ImagePressed()
         {
-            thumbnail.transform.parent.gameObject.SetActive(!thumbnail.transform.parent.gameObject.activeSelf);
+            imageView.transform.parent.gameObject.SetActive(!imageView.transform.parent.gameObject.activeSelf);
             videoView.gameObject.SetActive(!videoView.gameObject.activeSelf);
 
-            if (videoView.gameObject.activeSelf) targetImageParentHeight = 350;
-            else targetImageParentHeight = 250;
-        }
+            if (videoView.gameObject.activeSelf) 
+            {
+                targetImageParentHeight = 350;
 
-        private void UpdatePlayPauseState()
-        {
-            playIcon.SetActive(PlayerController.IsPaused);
-            pauseIcon.SetActive(!PlayerController.IsPaused);
-
-            if (PlayerController.IsPaused)
-                videoView.Pause();
+                videoView.RequestTrackUpdate();
+            }
             else
-                videoView.Play();
+            {
+                targetImageParentHeight = 250;
+            }
         }
 
         private void SetPlayerControlInteractivity(bool state)

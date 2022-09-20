@@ -24,7 +24,7 @@ namespace MP3Player.Youtube
             {
                 var youtubeService = new YouTubeService(new BaseClientService.Initializer()
                 {
-                    ApiKey = "REPLACE_ME",
+                    ApiKey = "AIzaSyDcSUkeeXoKcFXH4IZSHG8IbtDvESzoacM",
                     ApplicationName = "mp3playerv3"
                 });
                 _apiKeyService = youtubeService;
@@ -72,6 +72,7 @@ namespace MP3Player.Youtube
                     _userService = null;
                 }
             }
+            await ((UserCredential)_userService.HttpClientInitializer).RefreshTokenAsync(CancellationToken.None);
             return _userService;
         }
 

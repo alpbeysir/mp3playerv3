@@ -28,7 +28,7 @@ namespace MP3Player.Managers
             base.Awake();
             _ = Utils.RootPath;
 
-            Application.targetFrameRate = 144;
+            Application.targetFrameRate = 60;
             ApplicationChrome.statusBarState = ApplicationChrome.States.TranslucentOverContent;
             ApplicationChrome.navigationBarState = ApplicationChrome.States.Visible;
 

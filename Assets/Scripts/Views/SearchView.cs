@@ -8,6 +8,7 @@ using System.Threading;
 using UnityEngine;
 using MP3Player.Playback;
 using MP3Player.Youtube;
+using YoutubeExplode.Search;
 
 namespace MP3Player.Views
 {
@@ -25,7 +26,7 @@ namespace MP3Player.Views
         public int maxResults;
         public int curLoadedResults;
 
-        private Dictionary<int, YoutubeExplode.Search.VideoSearchResult> searchResults = new();
+        private Dictionary<int, VideoSearchResult> searchResults = new();
 
         private CancellationTokenSource cts = new CancellationTokenSource();
 
@@ -33,7 +34,7 @@ namespace MP3Player.Views
 
         private Queue<int> toBeUpdated = new Queue<int>();
 
-        private IAsyncEnumerator<YoutubeExplode.Search.VideoSearchResult> searchEnumerator;
+        private IAsyncEnumerator<ISearchResult> searchEnumerator;
 
         private Playlist targetPlaylist;
 
@@ -97,6 +98,7 @@ namespace MP3Player.Views
             curLoadedResults = 0;
             listView.RowCount = maxResults;
             listView.Refresh();
+            listView.VerticalNormalizedPosition = 1;
 
             loadingView.gameObject.SetActive(true);
             listView.gameObject.SetActive(false);
@@ -104,7 +106,7 @@ namespace MP3Player.Views
             failedView.SetActive(false);
 
             await UniTask.SwitchToThreadPool();
-            searchEnumerator = FakeYoutube.Instance.Search.GetVideosAsync(query, token).GetAsyncEnumerator();
+            searchEnumerator = new FakeYoutube.SearchEnumerator(query, FakeYoutube.SearchEnumerator.SearchFilter.VideoAndPlaylists, 1000, token);
             try
             {
                 //Search
@@ -122,11 +124,10 @@ namespace MP3Player.Views
                     if (curLoadedResults == disableLoadThreshold)
                         _ = DisableLoadingView();
 
-
                     //Check duration to eliminate livestreams
-                    if (searchEnumerator.Current != null && searchEnumerator.Current.Duration != null)
+                    if (searchEnumerator.Current is VideoSearchResult result && result.Duration != null)
                     {
-                        searchResults[curLoadedResults] = searchEnumerator.Current;
+                        searchResults[curLoadedResults] = result;
                         toBeUpdated.Enqueue(curLoadedResults);
                         curLoadedResults++;
                     }

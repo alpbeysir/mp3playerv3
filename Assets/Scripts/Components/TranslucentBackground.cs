@@ -5,6 +5,7 @@ using LeTai.Asset.TranslucentImage;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Video;
 
 namespace MP3Player.Components
 {

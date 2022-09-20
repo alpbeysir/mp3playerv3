@@ -23,8 +23,8 @@ namespace MP3Player.Components
 
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
         readonly int videoDelayMs = 150;
-        readonly float seekThreshold = 0.500f;
-        readonly float distortThreshold = 0.015f;
+        readonly float seekThreshold = 0.250f;
+        readonly float distortThreshold = 0.01f;
         readonly float maxDistortion = 0.25f;
 #else
         readonly int videoDelayMs = 750;
@@ -34,27 +34,67 @@ namespace MP3Player.Components
 #endif
 
         private bool lastPrepared;
+        private CancellationTokenSource cts;
+        private Track current;
 
-        void Start()
+        private void Start()
         {
             //videoPlayer.prepareCompleted += OnVideoPlayerPrepared;
             videoPlayer.seekCompleted += OnVideoSeekCompleted;
             videoPlayer.errorReceived += OnVideoErrorRecieved;
         }
-        public async UniTask SetTrack(Track track, CancellationToken token = default)
+
+        public void Play() => videoPlayer.Play();
+        public void Pause() => videoPlayer.Pause();
+
+        public void RequestTrackUpdate()
+        {
+            cts?.Cancel();
+            cts = new();
+            _ = SetTrack(PlayerController.Current, cts.Token);
+        }
+
+        public void Release()
         {
             videoRenderImage.CrossFadeAlpha(0.1f, 0.1f, true);
             loadingIndicator.SetActive(true);
             videoPlayer.Stop();
-            await UniTask.SwitchToThreadPool();
-            var url = (await track.GetVideoOnlyStreamInfoAsync(token)).Url;
-            await UniTask.SwitchToMainThread();
-            videoPlayer.url = url;
-            videoPlayer.Prepare();
+
+            videoPlayer.targetTexture = null;
+            videoPlayer.targetTexture?.Release();
         }
 
-        public void Play() => videoPlayer.Play();
-        public void Pause() => videoPlayer.Pause();
+        private async UniTask SetTrack(Track track, CancellationToken token = default)
+        {
+            if (current == track) return;
+
+            videoRenderImage.CrossFadeAlpha(0.1f, 0.1f, true);
+            loadingIndicator.SetActive(true);
+
+            try
+            {
+                videoPlayer.Stop();
+                videoPlayer.EnableAudioTrack(0, true);
+
+                token.ThrowIfCancellationRequested();
+
+                await UniTask.SwitchToThreadPool();
+                var url = (await track.GetVideoOnlyStreamInfoAsync(token)).Url;
+
+                token.ThrowIfCancellationRequested();
+
+                await UniTask.SwitchToMainThread();
+                videoPlayer.url = url;
+                videoPlayer.Prepare();
+
+                current = track;
+            }
+            finally
+            {
+                await UniTask.SwitchToMainThread();
+                loadingIndicator.SetActive(false);
+            }
+        }
 
         private async void OnVideoSeekCompleted(VideoPlayer vp)
         {
@@ -64,7 +104,7 @@ namespace MP3Player.Components
         private void OnVideoPlayerPrepared(VideoPlayer vp)
         {
             videoPlayer.targetTexture?.Release();
-            var tex = new RenderTexture((int)videoPlayer.width, (int)videoPlayer.height, 32);
+            var tex = new RenderTexture((int)videoPlayer.width, (int)videoPlayer.height, 0);
             tex.depth = 0;
             tex.filterMode = FilterMode.Bilinear;
             videoPlayer.targetTexture = tex;
@@ -108,7 +148,7 @@ namespace MP3Player.Components
                 if (!lastPrepared) OnVideoPlayerPrepared(videoPlayer);
             }
             lastPrepared = videoPlayer.isPrepared;
-            //debugText.text = ($"A/V Delay: {(int)(diff * 1000)} ms\nSeeking: {videoSeeking}\nPrepared: {videoPlayer.isPrepared}");
+            debugText.text = ($"A/V Delay: {(int)(diff * 1000)} ms");
         }
     }
 }

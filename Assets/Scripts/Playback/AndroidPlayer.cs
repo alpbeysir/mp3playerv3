@@ -12,21 +12,18 @@ namespace MP3Player.Playback
             public BackgroundAudioInterface() : base("com.alpbeysir.backgroundaudio.BackgroundAudioInterface") { }
 
             //Called from native code
-            private void Started() => OnStart?.Invoke();
             private void Stopped() => OnStop?.Invoke();
             private void Paused() => OnPause?.Invoke();
             private void Resumed() => OnResume?.Invoke();
-
-            //TODO Handle Info and Error
-            private void Info(int what, int extra) { Debug.Log("Info called with " + what + extra); }
-            private void Error(int what, int extra) { Debug.Log("Error called with " + what + extra); }
-
             private void Prepared()
             {
                 Debug.Log("Prepared called");
                 prepared = true;
                 OnPrepared?.Invoke();
             }
+
+            //TODO Handle Info and Error
+            private void Error(int code) => Debug.Log($"Error called with {code}");
         }
 
         public override void SetDataSource(string uri)
@@ -34,8 +31,7 @@ namespace MP3Player.Playback
             prepared = false;
             _curPos = 0;
             AndroidJNI.AttachCurrentThread();
-            CallOnService("showNotification", title, desc, iconUri);
-            CallOnService("start", uri);
+            CallOnService("start", uri, title, desc, iconUri);
             AndroidJNI.DetachCurrentThread();
         }
 
@@ -47,7 +43,7 @@ namespace MP3Player.Playback
             {
                 _curPos = prepared ? CallOnService<float>("getPosition") : 0;
                 if (token.IsCancellationRequested) return;
-                await Task.Delay(100);
+                await Task.Delay(50);
             }
         }
         public override float CurPos
@@ -59,8 +55,8 @@ namespace MP3Player.Playback
                     CallOnService("setPosition", value);
             }
         }
+        public override float Volume { get => CallOnService<float>("getVolume"); set => CallOnService("setVolume", value); }
 
-        public override float Volume { get => 1.0f; set => _ = value; }
         public static void SetNotificationData(string _title, string _desc, string _iconUri)
         {
             title = _title;

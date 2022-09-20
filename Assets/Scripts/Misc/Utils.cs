@@ -45,5 +45,11 @@ namespace MP3Player.Misc
             bool bigger = out_max > out_min;
             return Mathf.Clamp(value, bigger ? out_min : out_max, bigger ? out_max : out_min);
         }
+
+        public static bool ContainsArray(string str, string pred)
+        {
+            foreach (char c in str) if (pred.Contains(c)) return true;
+            return false;
+        }
     }
 }
