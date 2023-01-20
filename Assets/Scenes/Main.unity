@@ -4453,7 +4453,7 @@ MonoBehaviour:
   searchSomethingView: {fileID: 147498070}
   failedView: {fileID: 1033423583}
   searchBar: {fileID: 317506142}
-  disableLoadThreshold: 11
+  disableLoadThreshold: 6
   optionsView: {fileID: 1092059517}
   maxResults: 100
   curLoadedResults: 0

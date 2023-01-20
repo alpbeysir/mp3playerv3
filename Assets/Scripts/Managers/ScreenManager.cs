@@ -50,6 +50,7 @@ namespace MP3Player.Managers
         private void OnApplicationPause()
         {
             DB.Instance.Checkpoint();
+            SecureDataStore.Instance.Checkpoint();
             TextureManager.TextureGCCollect();
         }
 
@@ -57,6 +58,7 @@ namespace MP3Player.Managers
         {
             TextureManager.memCache.Clear();
             DB.Instance.Checkpoint();
+            SecureDataStore.Instance.Checkpoint();
             DB.Dispose();
         }
 

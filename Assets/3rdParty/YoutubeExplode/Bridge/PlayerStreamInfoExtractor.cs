@@ -4,7 +4,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using YoutubeExplode.Utils;
 using YoutubeExplode.Utils.Extensions;
-#nullable enable
+
 namespace YoutubeExplode.Bridge
 {
     internal class PlayerStreamInfoExtractor : IStreamInfoExtractor
@@ -99,7 +99,7 @@ namespace YoutubeExplode.Bridge
                 ? null
                 : TryGetCodecs()?.SubstringUntil(", ").NullIfWhiteSpace();
 
-        // "unknown" value indicates av01 codec
+            // "unknown" value indicates av01 codec
             if (string.Equals(codec, "unknown", StringComparison.OrdinalIgnoreCase))
                 return "av01.0.05M.08";
 

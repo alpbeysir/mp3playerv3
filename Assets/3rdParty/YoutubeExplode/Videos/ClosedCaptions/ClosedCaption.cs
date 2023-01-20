@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-#nullable enable
+
 namespace YoutubeExplode.Videos.ClosedCaptions
 {
     /// <summary>
@@ -34,7 +34,7 @@ namespace YoutubeExplode.Videos.ClosedCaptions
         public IReadOnlyList<ClosedCaptionPart> Parts { get; }
 
         /// <summary>
-        /// Initializes an instance of <see cref="ClosedCaption"/>.
+        /// Initializes an instance of <see cref="ClosedCaption" />.
         /// </summary>
         public ClosedCaption(
             string text,

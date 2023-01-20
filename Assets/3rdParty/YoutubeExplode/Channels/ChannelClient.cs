@@ -21,7 +21,7 @@ namespace YoutubeExplode.Channels
         private readonly ChannelController _controller;
 
         /// <summary>
-        /// Initializes an instance of <see cref="ChannelClient"/>.
+        /// Initializes an instance of <see cref="ChannelClient" />.
         /// </summary>
         public ChannelClient(HttpClient http)
         {
@@ -45,7 +45,7 @@ namespace YoutubeExplode.Channels
 
             var logoSize = Regex
                 .Matches(logoUrl, @"\bs(\d+)\b")
-                .Cast<Match>()
+                .ToArray()
                 .LastOrDefault()?
                 .Groups[1]
                 .Value
@@ -82,6 +82,14 @@ namespace YoutubeExplode.Channels
             Extract(await _controller.GetChannelPageAsync(channelSlug, cancellationToken));
 
         /// <summary>
+        /// Gets the metadata associated with the channel identified by the specified handle or handle URL.
+        /// </summary>
+        public async ValueTask<Channel> GetByHandleAsync(
+            ChannelHandle channelHandle,
+            CancellationToken cancellationToken = default) =>
+            Extract(await _controller.GetChannelPageAsync(channelHandle, cancellationToken));
+
+        /// <summary>
         /// Enumerates videos uploaded by the specified channel.
         /// </summary>
         // TODO: should return <IVideo> sequence instead (breaking change)
@@ -90,7 +98,7 @@ namespace YoutubeExplode.Channels
             CancellationToken cancellationToken = default)
         {
             // Replace 'UC' in channel ID with 'UU'
-            var playlistId = "UU" + channelId.Value.Substring(2);
+            var playlistId = "UU" + channelId.Value[2..];
             return new PlaylistClient(_http).GetVideosAsync(playlistId, cancellationToken);
         }
     }

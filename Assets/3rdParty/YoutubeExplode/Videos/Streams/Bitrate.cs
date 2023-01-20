@@ -1,5 +1,5 @@
 using System;
-#nullable enable
+
 namespace YoutubeExplode.Videos.Streams
 {
     /// <summary>
@@ -28,7 +28,7 @@ namespace YoutubeExplode.Videos.Streams
         public double GigaBitsPerSecond => MegaBitsPerSecond / 1024.0;
 
         /// <summary>
-        /// Initializes an instance of <see cref="Bitrate"/>.
+        /// Initializes an instance of <see cref="Bitrate" />.
         /// </summary>
         public Bitrate(long bitsPerSecond) => BitsPerSecond = bitsPerSecond;
 

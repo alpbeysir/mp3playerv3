@@ -33,7 +33,7 @@ namespace YoutubeExplode
         public SearchClient Search { get; }
 
         /// <summary>
-        /// Initializes an instance of <see cref="YoutubeClient"/>.
+        /// Initializes an instance of <see cref="YoutubeClient" />.
         /// </summary>
         public YoutubeClient(HttpClient http)
         {
@@ -44,7 +44,7 @@ namespace YoutubeExplode
         }
 
         /// <summary>
-        /// Initializes an instance of <see cref="YoutubeClient"/>.
+        /// Initializes an instance of <see cref="YoutubeClient" />.
         /// </summary>
         public YoutubeClient() : this(Http.Client)
         {

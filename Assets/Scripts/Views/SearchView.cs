@@ -23,8 +23,10 @@ namespace MP3Player.Views
 
         [SerializeField] private OptionsView optionsView;
 
+        public int maxRealYoutubeSearches;
         public int maxResults;
         public int curLoadedResults;
+        public int maxSeenIndex;
 
         private Dictionary<int, VideoSearchResult> searchResults = new();
 
@@ -70,9 +72,6 @@ namespace MP3Player.Views
         {
             listView.ItemCallback += PopulateDelegate;
             listView.RowCount = 0;
-
-            //leftSwipeActionData.onActivate += OnLeftSwipe;
-            //rightSwipeActionData.onActivate += OnRightSwipe;
         }
 
         private void Update()
@@ -106,12 +105,21 @@ namespace MP3Player.Views
             failedView.SetActive(false);
 
             await UniTask.SwitchToThreadPool();
-            searchEnumerator = new FakeYoutube.SearchEnumerator(query, FakeYoutube.SearchEnumerator.SearchFilter.VideoAndPlaylists, 1000, token);
+            bool switchedToFakeSearch = false;
+            searchEnumerator = new RealYoutube.SearchEnumerator(query, token);
             try
             {
                 //Search
                 while (curLoadedResults < maxResults)
                 {
+                    if (maxSeenIndex <= curLoadedResults) continue;
+
+                    if (curLoadedResults >= maxRealYoutubeSearches && !switchedToFakeSearch)
+                    {
+                        searchEnumerator = new FakeYoutube.SearchEnumerator(query, FakeYoutube.SearchEnumerator.SearchFilter.VideoAndPlaylists, maxResults, token);
+                        switchedToFakeSearch = true;
+                    }
+
                     token.ThrowIfCancellationRequested();
 
                     if (!await searchEnumerator.MoveNextAsync())
@@ -121,7 +129,7 @@ namespace MP3Player.Views
                         break;
                     }
 
-                    if (curLoadedResults == disableLoadThreshold)
+                    if (curLoadedResults >= disableLoadThreshold)
                         _ = DisableLoadingView();
 
                     //Check duration to eliminate livestreams
@@ -196,6 +204,8 @@ namespace MP3Player.Views
         {
             info.ShowLoading();
 
+            if (index > maxSeenIndex) maxSeenIndex = index;
+
             if (!searchResults.ContainsKey(index)) return;
             Track track = new(searchResults[index]);
 
@@ -207,13 +217,6 @@ namespace MP3Player.Views
                 info.SetButtonAction("e145", (t, ti) => { targetPlaylist.Add(t); ti.RemoveButtonAction(); });
             else
                 info.SetButtonAction("e5d4", ShowTrackDetails);
-
-            //info.SetLeftSwipeAction(leftSwipeActionData);
-
-            //if (!track.AvailableOffline())
-            //    info.SetRightSwipeAction(rightSwipeActionData);
-            //else 
-            //    info.RemoveRightSwipeAction();
 
             track.Save();
         }

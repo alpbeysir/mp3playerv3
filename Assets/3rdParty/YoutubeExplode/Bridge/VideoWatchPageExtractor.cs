@@ -5,7 +5,7 @@ using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 using YoutubeExplode.Utils;
 using YoutubeExplode.Utils.Extensions;
-#nullable enable
+
 namespace YoutubeExplode.Bridge
 {
     internal partial class VideoWatchPageExtractor

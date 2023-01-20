@@ -1,9 +1,10 @@
-﻿using MP3Player.Misc;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using YoutubeExplode;
 using YoutubeExplode.Search;
+using UnityEngine;
+using MP3Player.Misc;
 
 namespace MP3Player.Youtube
 {
@@ -68,10 +69,11 @@ namespace MP3Player.Youtube
 
             private async Task<bool> SmartFilter(VideoSearchResult result)
             {
-                if (Utils.ContainsArray(result.Title, "()-|@!/")) return false;
-                return true;
-                //Only do expensive checks later
-                //return (await Instance.Videos.GetAsync(result.Id)).Description.Contains("Provided to YouTube");
+                if (result.Title.Contains(result.Author.ChannelTitle)) return true;
+
+                if (Utils.ContainsArray(result.Title, "|@!/")) return false;
+
+                return (await Instance.Videos.GetAsync(result.Id)).Description.Contains("Provided to YouTube");
             }
 
             public async ValueTask<bool> MoveNextAsync()

@@ -2,10 +2,9 @@ using System;
 using AngleSharp.Html.Dom;
 using YoutubeExplode.Utils;
 using YoutubeExplode.Utils.Extensions;
-#nullable enable
+
 namespace YoutubeExplode.Bridge
 {
-
     internal partial class ChannelPageExtractor
     {
         private readonly IHtmlDocument _content;

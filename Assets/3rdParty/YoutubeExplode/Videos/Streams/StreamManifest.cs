@@ -14,7 +14,7 @@ namespace YoutubeExplode.Videos.Streams
         public IReadOnlyList<IStreamInfo> Streams { get; }
 
         /// <summary>
-        /// Initializes an instance of <see cref="StreamManifest"/>.
+        /// Initializes an instance of <see cref="StreamManifest" />.
         /// </summary>
         public StreamManifest(IReadOnlyList<IStreamInfo> streams)
         {

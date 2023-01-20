@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-#nullable enable
+
 namespace YoutubeExplode.Utils.Extensions
 {
     internal static class StringExtensions
@@ -20,7 +20,7 @@ namespace YoutubeExplode.Utils.Extensions
 
             return index < 0
                 ? s
-                : s.Substring(0, index);
+                : s[..index];
         }
 
         public static string SubstringAfter(this string s, string sub,

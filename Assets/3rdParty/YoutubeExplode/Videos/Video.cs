@@ -49,7 +49,7 @@ namespace YoutubeExplode.Videos
         public Engagement Engagement { get; }
 
         /// <summary>
-        /// Initializes an instance of <see cref="Video"/>.
+        /// Initializes an instance of <see cref="Video" />.
         /// </summary>
         public Video(
             VideoId id,

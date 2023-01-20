@@ -2,7 +2,7 @@ using System;
 using System.Text.RegularExpressions;
 using YoutubeExplode.Common;
 using YoutubeExplode.Utils.Extensions;
-#nullable enable
+
 namespace YoutubeExplode.Videos.Streams
 {
     /// <summary>
@@ -32,7 +32,7 @@ namespace YoutubeExplode.Videos.Streams
         public bool IsHighDefinition => MaxHeight >= 1080;
 
         /// <summary>
-        /// Initializes an instance of <see cref="VideoQuality"/>.
+        /// Initializes an instance of <see cref="VideoQuality" />.
         /// </summary>
         public VideoQuality(string label, int maxHeight, int framerate)
         {
@@ -42,7 +42,7 @@ namespace YoutubeExplode.Videos.Streams
         }
 
         /// <summary>
-        /// Initializes an instance of <see cref="VideoQuality"/>.
+        /// Initializes an instance of <see cref="VideoQuality" />.
         /// </summary>
         public VideoQuality(int maxHeight, int framerate)
             : this(FormatLabel(maxHeight, framerate), maxHeight, framerate)
@@ -89,7 +89,7 @@ namespace YoutubeExplode.Videos.Streams
             // - 1080p60 (regular stream, high fps)
             // - 1080s (360° stream, regular fps)
             // - 1080s60 (360° stream, high fps)
-            // - 2160p60 HDR (high string range, high fps)
+            // - 2160p60 HDR (high dynamic range, high fps)
 
             var match = Regex.Match(label, @"^(\d+)\D(\d+)?");
 

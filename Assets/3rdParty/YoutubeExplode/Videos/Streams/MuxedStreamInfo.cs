@@ -33,7 +33,7 @@ namespace YoutubeExplode.Videos.Streams
         public Resolution VideoResolution { get; }
 
         /// <summary>
-        /// Initializes an instance of <see cref="MuxedStreamInfo"/>.
+        /// Initializes an instance of <see cref="MuxedStreamInfo" />.
         /// </summary>
         public MuxedStreamInfo(
             string url,

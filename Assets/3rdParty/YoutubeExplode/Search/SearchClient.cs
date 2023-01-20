@@ -7,7 +7,7 @@ using System.Threading;
 using YoutubeExplode.Common;
 using YoutubeExplode.Exceptions;
 using YoutubeExplode.Utils.Extensions;
-#nullable enable
+
 namespace YoutubeExplode.Search
 {
     /// <summary>
@@ -18,7 +18,7 @@ namespace YoutubeExplode.Search
         private readonly SearchController _controller;
 
         /// <summary>
-        /// Initializes an instance of <see cref="SearchClient"/>.
+        /// Initializes an instance of <see cref="SearchClient" />.
         /// </summary>
         public SearchClient(HttpClient http) =>
             _controller = new SearchController(http);

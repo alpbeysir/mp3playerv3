@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using YoutubeExplode.Bridge;
 using YoutubeExplode.Utils;
-#nullable enable
+
 namespace YoutubeExplode.Search
 {
     internal class SearchController : YoutubeControllerBase
@@ -19,7 +19,7 @@ namespace YoutubeExplode.Search
             string? continuationToken,
             CancellationToken cancellationToken = default)
         {
-            const string url = "https://www.youtube.com/youtubei/v1/search?key=" + ApiKey;
+            string url = $"https://www.youtube.com/youtubei/v1/search?key={ApiKey}";
 
             var payload = new
             {

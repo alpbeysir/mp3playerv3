@@ -1,13 +1,18 @@
-using Google.Apis.YouTube.v3;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Auth.OAuth2.Responses;
-using System.Threading.Tasks;
-using System.IO;
-using System.Threading;
 using Google.Apis.Services;
+using Google.Apis.YouTube.v3;
+using Google.Apis.YouTube.v3.Data;
 using MP3Player.Models;
-using UnityEngine;
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using UnityEngine;
+using YoutubeExplode.Search;
+using Playlist = MP3Player.Models.Playlist;
 
 namespace MP3Player.Youtube
 {
@@ -103,6 +108,94 @@ namespace MP3Player.Youtube
             catch (System.Exception e)
             {
                 Debug.LogException(e);
+            }
+        }
+
+        public class SearchEnumerator : IAsyncEnumerator<ISearchResult>
+        {
+            private readonly CancellationToken token;
+
+            private string nextPage;
+            private readonly List<SearchResult> cache = new();
+            private int currentIndex = -1;
+            private readonly string query;
+            private readonly string relatedToVideoId;
+
+            public ISearchResult Current => FromYoutubeSearchResult(cache[currentIndex]);
+
+            private VideoSearchResult FromYoutubeSearchResult(SearchResult res)
+            {
+                return new(res.Id.VideoId,
+                    res.Snippet.Title,
+                    new YoutubeExplode.Common.Author(res.Snippet.ChannelId, res.Snippet.ChannelTitle),
+                    TimeSpan.Zero,
+                    FromYoutubeThumbnails(res.Snippet.Thumbnails)
+                    );
+            }
+
+            private List<YoutubeExplode.Common.Thumbnail> FromYoutubeThumbnails(ThumbnailDetails td)
+            {
+                List<YoutubeExplode.Common.Thumbnail> t = new();
+
+                t.Add(new YoutubeExplode.Common.Thumbnail(td.Default__.Url, new YoutubeExplode.Common.Resolution((int)td.Default__.Width.Value, (int)td.Default__.Height.Value)));
+                if (td.Standard != null) t.Add(new YoutubeExplode.Common.Thumbnail(td.Standard.Url, new YoutubeExplode.Common.Resolution((int)td.Standard.Width.Value, (int)td.Standard.Height.Value)));
+                if (td.High != null) t.Add(new YoutubeExplode.Common.Thumbnail(td.High.Url, new YoutubeExplode.Common.Resolution((int)td.High.Width.Value, (int)td.High.Height.Value)));
+                if (td.Maxres != null) t.Add(new YoutubeExplode.Common.Thumbnail(td.Maxres.Url, new YoutubeExplode.Common.Resolution((int)td.Maxres.Width.Value, (int)td.Maxres.Height.Value)));
+                return t;
+            }
+
+            public ValueTask DisposeAsync()
+            {
+                return new ValueTask(Task.CompletedTask);
+            }
+
+            public async ValueTask<bool> MoveNextAsync()
+            {
+                if (currentIndex < 0 || currentIndex >= cache.Count - 1)
+                {
+                    var service = GetApiKeyServiceAsync();
+
+                    var searchReq = service.Search.List("snippet");
+                    searchReq.Q = query;
+                    searchReq.Type = "video";
+                    searchReq.VideoCategoryId = "10";
+                    searchReq.MaxResults = 10;
+                    searchReq.PageToken = nextPage;
+                    searchReq.SafeSearch = SearchResource.ListRequest.SafeSearchEnum.None;
+
+                    if (relatedToVideoId != "") 
+                        searchReq.RelatedToVideoId = relatedToVideoId;
+
+                    try
+                    {
+                        var searchResp = await searchReq.ExecuteAsync(token);
+                        nextPage = searchResp.NextPageToken;
+                        if (searchResp.Items.Count == 0) 
+                            return false;
+
+                        cache.AddRange(searchResp.Items);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                        return false;
+                    }
+                }
+
+                currentIndex++;
+                return true;
+            }
+
+            public enum SearchFilter
+            {
+                VideoAndPlaylists, Downloads, Smart
+            }
+
+            public SearchEnumerator(string _query, CancellationToken _token = default, string _relatedToVideoId = "")
+            {
+                query = _query;
+                token = _token;
+                relatedToVideoId = _relatedToVideoId;
             }
         }
     }

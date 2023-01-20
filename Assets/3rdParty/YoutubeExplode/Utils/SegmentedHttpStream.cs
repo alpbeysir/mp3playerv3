@@ -5,7 +5,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using YoutubeExplode.Utils.Extensions;
-#nullable enable
+
 namespace YoutubeExplode.Utils
 {
     // Special abstraction that works around YouTube's stream throttling
@@ -62,7 +62,7 @@ namespace YoutubeExplode.Utils
             return _segmentStream = stream;
         }
 
-        public async ValueTask PreloadAsync(CancellationToken cancellationToken = default) =>
+        public async ValueTask InitializeAsync(CancellationToken cancellationToken = default) =>
             await ResolveSegmentAsync(cancellationToken);
 
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)

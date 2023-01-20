@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using YoutubeExplode.Exceptions;
 using YoutubeExplode.Utils.Extensions;
-#nullable enable
+
 namespace YoutubeExplode.Videos.ClosedCaptions
 {
     /// <summary>
@@ -18,7 +18,7 @@ namespace YoutubeExplode.Videos.ClosedCaptions
         private readonly ClosedCaptionController _controller;
 
         /// <summary>
-        /// Initializes an instance of <see cref="ClosedCaptionClient"/>.
+        /// Initializes an instance of <see cref="ClosedCaptionClient" />.
         /// </summary>
         public ClosedCaptionClient(HttpClient http) =>
             _controller = new ClosedCaptionController(http);
@@ -74,12 +74,13 @@ namespace YoutubeExplode.Videos.ClosedCaptions
                 .GetClosedCaptions()
                 .Select(c =>
                 {
-                    var text = c.TryGetText();
-                    if (string.IsNullOrWhiteSpace(text))
-                        return null;
+                    // Captions may have no text, but we should still include them to stay consistent
+                    // with YouTube player behavior where captions are still displayed even if they're empty.
+                    // https://github.com/Tyrrrz/YoutubeExplode/issues/671
+                    var text = c.TryGetText() ?? "";
 
-                // Auto-generated captions may have invalid manifests:
-                // https://github.com/Tyrrrz/YoutubeExplode/discussions/619
+                    // Auto-generated captions may be missing offset or duration.
+                    // https://github.com/Tyrrrz/YoutubeExplode/discussions/619
 
                     if (c.TryGetOffset() is not { } offset)
                         return null;
@@ -91,9 +92,10 @@ namespace YoutubeExplode.Videos.ClosedCaptions
                         .GetParts()
                         .Select(p =>
                         {
-                            var partText = p.TryGetText();
-                            if (string.IsNullOrWhiteSpace(partText))
-                                return null;
+                            // Caption parts may have no text, but we should still include them to stay consistent
+                            // with YouTube player behavior where captions are still displayed even if they're empty.
+                            // https://github.com/Tyrrrz/YoutubeExplode/issues/671
+                            var partText = p.TryGetText() ?? "";
 
                             var partOffset =
                                 p.TryGetOffset() ??

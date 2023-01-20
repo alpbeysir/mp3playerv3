@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using YoutubeExplode.Videos;
-#nullable enable
+
 namespace YoutubeExplode.Common
 {
     /// <summary>
@@ -22,7 +22,7 @@ namespace YoutubeExplode.Common
         public Resolution Resolution { get; }
 
         /// <summary>
-        /// Initializes an instance of <see cref="Thumbnail"/>.
+        /// Initializes an instance of <see cref="Thumbnail" />.
         /// </summary>
         public Thumbnail(string url, Resolution resolution)
         {
@@ -46,7 +46,7 @@ namespace YoutubeExplode.Common
     }
 
     /// <summary>
-    /// Extensions for <see cref="Thumbnail"/>.
+    /// Extensions for <see cref="Thumbnail" />.
     /// </summary>
     public static class ThumbnailExtensions
     {

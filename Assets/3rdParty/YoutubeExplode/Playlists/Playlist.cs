@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using YoutubeExplode.Common;
-#nullable enable
+
 namespace YoutubeExplode.Playlists
 {
     /// <summary>
@@ -30,7 +30,7 @@ namespace YoutubeExplode.Playlists
         public IReadOnlyList<Thumbnail> Thumbnails { get; }
 
         /// <summary>
-        /// Initializes an instance of <see cref="Playlist"/>.
+        /// Initializes an instance of <see cref="Playlist" />.
         /// </summary>
         public Playlist(
             PlaylistId id,

@@ -1,6 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
-#nullable enable
+
 namespace YoutubeExplode.Common
 {
     /// <summary>
@@ -24,7 +24,7 @@ namespace YoutubeExplode.Common
         public int Area => Width * Height;
 
         /// <summary>
-        /// Initializes an instance of <see cref="Resolution"/>.
+        /// Initializes an instance of <see cref="Resolution" />.
         /// </summary>
         public Resolution(int width, int height)
         {

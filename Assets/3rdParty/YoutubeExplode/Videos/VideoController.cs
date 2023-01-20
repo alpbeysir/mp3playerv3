@@ -42,40 +42,32 @@ namespace YoutubeExplode.Videos
             );
         }
 
-        [UnityEngine.Scripting.Preserve]
-        public async Task<PlayerResponseExtractor> GetPlayerResponseAsync(
+        public async ValueTask<PlayerResponseExtractor> GetPlayerResponseAsync(
             VideoId videoId,
-            bool isEmbedded,
             CancellationToken cancellationToken = default)
         {
-            const string url = "https://www.youtube.com/youtubei/v1/player?key=" + ApiKey;
-
-            var payload = new
-            {
-                videoId = videoId.Value,
-                contentCheckOk = true,
-                racyCheckOk = true,
-                context = new
-                {
-                    client = new
-                    {
-                        clientName = "ANDROID",
-                        clientScreen = isEmbedded ? "EMBED" : null,
-                        clientVersion = "16.46.37",
-                        hl = "en",
-                        gl = "US",
-                        utcOffsetMinutes = 0
-                    },
-                    thirdParty = new
-                    {
-                        embedUrl = "https://www.youtube.com"
-                    }
-                }
-            };
+            string url = $"https://www.youtube.com/youtubei/v1/player?key={ApiKey}";
 
             using var request = new HttpRequestMessage(HttpMethod.Post, url)
             {
-                Content = Json.SerializeToHttpContent(payload)
+                Content = Json.SerializeToHttpContent(new
+                {
+                    videoId = videoId.Value,
+                    contentCheckOk = true,
+                    racyCheckOk = true,
+                    context = new
+                    {
+                        client = new
+                        {
+                            clientName = "ANDROID",
+                            clientVersion = "17.29.35",
+                            androidSdkVersion = 30,
+                            hl = "en",
+                            gl = "US",
+                            utcOffsetMinutes = 0
+                        }
+                    }
+                })
             };
 
             var raw = await SendHttpRequestAsync(request, cancellationToken);
@@ -89,10 +81,54 @@ namespace YoutubeExplode.Videos
             return playerResponse;
         }
 
-        [UnityEngine.Scripting.Preserve]
-        public async Task<PlayerResponseExtractor> GetPlayerResponseAsync(
+        public async ValueTask<PlayerResponseExtractor> GetPlayerResponseAsync(
             VideoId videoId,
-            CancellationToken cancellationToken = default) =>
-            await GetPlayerResponseAsync(videoId, false, cancellationToken);
+            string signatureTimestamp,
+            CancellationToken cancellationToken = default)
+        {
+            string url = $"https://www.youtube.com/youtubei/v1/player?key={ApiKey}";
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, url)
+            {
+                Content = Json.SerializeToHttpContent(new
+                {
+                    videoId = videoId.Value,
+                    contentCheckOk = true,
+                    racyCheckOk = true,
+                    context = new
+                    {
+                        client = new
+                        {
+                            clientName = "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
+                            clientVersion = "2.0",
+                            hl = "en",
+                            gl = "US",
+                            utcOffsetMinutes = 0
+                        },
+                        thirdParty = new
+                        {
+                            embedUrl = "https://www.youtube.com"
+                        }
+                    },
+                    playbackContext = new
+                    {
+                        contentPlaybackContext = new
+                        {
+                            signatureTimestamp
+                        }
+                    }
+                })
+            };
+
+            var raw = await SendHttpRequestAsync(request, cancellationToken);
+            var playerResponse = PlayerResponseExtractor.Create(raw);
+
+            if (!playerResponse.IsVideoAvailable())
+            {
+                throw new VideoUnavailableException($"Video '{videoId}' is not available.");
+            }
+
+            return playerResponse;
+        }
     }
 }

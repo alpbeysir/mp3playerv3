@@ -29,7 +29,7 @@ namespace YoutubeExplode.Common
         public string Title => ChannelTitle;
 
         /// <summary>
-        /// Initializes an instance of <see cref="Author"/>.
+        /// Initializes an instance of <see cref="Author" />.
         /// </summary>
         public Author(ChannelId channelId, string channelTitle)
         {

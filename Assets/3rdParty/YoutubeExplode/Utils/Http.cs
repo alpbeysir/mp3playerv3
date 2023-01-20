@@ -10,7 +10,7 @@ namespace YoutubeExplode.Utils
         {
             var handler = new HttpClientHandler
             {
-            // https://github.com/Tyrrrz/YoutubeExplode/issues/530
+                // https://github.com/Tyrrrz/YoutubeExplode/issues/530
                 UseCookies = false
             };
 

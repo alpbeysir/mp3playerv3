@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
-#nullable enable
+
 namespace YoutubeExplode.Utils.Extensions
 {
     internal static class JsonExtensions

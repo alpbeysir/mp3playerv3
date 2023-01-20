@@ -2,13 +2,13 @@
 using System.Diagnostics.CodeAnalysis;
 using YoutubeExplode.Common;
 using YoutubeExplode.Playlists;
-#nullable enable
+
 namespace YoutubeExplode.Search
 {
     /// <summary>
     /// Metadata associated with a YouTube playlist returned by a search query.
     /// </summary>
-    public class PlaylistSearchResult : ISearchResult, Playlists.IPlaylist
+    public class PlaylistSearchResult : ISearchResult, IPlaylist
     {
         /// <inheritdoc />
         public PlaylistId Id { get; }
@@ -26,7 +26,7 @@ namespace YoutubeExplode.Search
         public IReadOnlyList<Thumbnail> Thumbnails { get; }
 
         /// <summary>
-        /// Initializes an instance of <see cref="PlaylistSearchResult"/>.
+        /// Initializes an instance of <see cref="PlaylistSearchResult" />.
         /// </summary>
         public PlaylistSearchResult(
             PlaylistId id,

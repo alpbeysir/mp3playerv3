@@ -1,5 +1,5 @@
 using System;
-#nullable enable
+
 namespace YoutubeExplode.Videos.Streams
 {
     /// <summary>
@@ -31,7 +31,7 @@ namespace YoutubeExplode.Videos.Streams
             string.Equals(Name, "opus", StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
-        /// Initializes an instance of <see cref="Container"/>.
+        /// Initializes an instance of <see cref="Container" />.
         /// </summary>
         public Container(string name) => Name = name;
 

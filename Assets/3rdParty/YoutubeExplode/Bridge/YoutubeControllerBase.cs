@@ -1,5 +1,4 @@
-﻿using System;
-using System.Net.Http;
+﻿using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using YoutubeExplode.Exceptions;
@@ -50,13 +49,13 @@ namespace YoutubeExplode.Bridge
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new HttpRequestException(
-                    $"Response status code does not indicate success: {(int)response.StatusCode} ({response.StatusCode})." +
-                    Environment.NewLine +
-                    "Request:" +
-                    Environment.NewLine +
-                    request
-                );
+                var message = $"Response status code does not indicate success: {(int)response.StatusCode} ({response.StatusCode}).\n\nRequest:\n{request}\n";
+
+#if NET5_0_OR_GREATER
+            throw new HttpRequestException(message, null, response.StatusCode);
+#else
+                throw new HttpRequestException(message);
+#endif
             }
 
             return await response.Content.ReadAsStringAsync(cancellationToken);

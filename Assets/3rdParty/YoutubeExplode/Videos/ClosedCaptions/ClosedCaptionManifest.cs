@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-#nullable enable
+
 namespace YoutubeExplode.Videos.ClosedCaptions
 {
     /// <summary>
@@ -15,7 +15,7 @@ namespace YoutubeExplode.Videos.ClosedCaptions
         public IReadOnlyList<ClosedCaptionTrackInfo> Tracks { get; }
 
         /// <summary>
-        /// Initializes an instance of <see cref="ClosedCaptionManifest"/>.
+        /// Initializes an instance of <see cref="ClosedCaptionManifest" />.
         /// </summary>
         public ClosedCaptionManifest(IReadOnlyList<ClosedCaptionTrackInfo> tracks)
         {

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-#nullable enable
+
 namespace YoutubeExplode.Utils.Extensions
 {
     internal static class CollectionExtensions

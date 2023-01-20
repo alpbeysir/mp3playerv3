@@ -48,6 +48,11 @@ namespace MP3Player.Models
             }
         }
 
+        public void Checkpoint()
+        {
+            DBInstance.Checkpoint();
+        }
+
         public Task ClearAsync()
         {
             Data.Clear();

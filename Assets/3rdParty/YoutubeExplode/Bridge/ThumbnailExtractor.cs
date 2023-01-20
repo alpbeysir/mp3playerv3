@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using YoutubeExplode.Utils;
 using YoutubeExplode.Utils.Extensions;
-#nullable enable
+
 namespace YoutubeExplode.Bridge
 {
     internal class ThumbnailExtractor

@@ -5,7 +5,7 @@ using YoutubeExplode.Bridge;
 using YoutubeExplode.Exceptions;
 using YoutubeExplode.Utils;
 using YoutubeExplode.Videos;
-#nullable enable
+
 namespace YoutubeExplode.Playlists
 {
     internal class PlaylistController : YoutubeControllerBase
@@ -19,7 +19,7 @@ namespace YoutubeExplode.Playlists
             PlaylistId playlistId,
             CancellationToken cancellationToken = default)
         {
-            const string url = "https://www.youtube.com/youtubei/v1/browse?key=" + ApiKey;
+            string url = $"https://www.youtube.com/youtubei/v1/browse?key={ApiKey}";
 
             var payload = new
             {
@@ -60,7 +60,7 @@ namespace YoutubeExplode.Playlists
             string? visitorData = null,
             CancellationToken cancellationToken = default)
         {
-            const string url = "https://www.youtube.com/youtubei/v1/next?key=" + ApiKey;
+            string url = $"https://www.youtube.com/youtubei/v1/next?key={ApiKey}";
 
             var payload = new
             {

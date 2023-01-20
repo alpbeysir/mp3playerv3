@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using YoutubeExplode.Common;
-#nullable enable
+
 namespace YoutubeExplode.Videos.Streams
 {
     /// <summary>
@@ -27,7 +27,7 @@ namespace YoutubeExplode.Videos.Streams
     }
 
     /// <summary>
-    /// Extensions for <see cref="IVideoStreamInfo"/>.
+    /// Extensions for <see cref="IVideoStreamInfo" />.
     /// </summary>
     public static class VideoStreamInfoExtensions
     {

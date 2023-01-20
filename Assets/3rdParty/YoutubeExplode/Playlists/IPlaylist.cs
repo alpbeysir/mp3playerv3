@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using YoutubeExplode.Common;
-#nullable enable
+
 namespace YoutubeExplode.Playlists
 {
     /// <summary>

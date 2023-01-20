@@ -2,7 +2,6 @@ namespace YoutubeExplode.Bridge
 {
     internal interface IStreamInfoExtractor
     {
-#nullable enable
         int? TryGetItag();
 
         string? TryGetUrl();
