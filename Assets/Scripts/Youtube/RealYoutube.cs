@@ -57,7 +57,7 @@ namespace MP3Player.Youtube
                     {
                         credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
                             GoogleClientSecrets.FromStream(stream).Secrets,
-                            new[] { YouTubeService.Scope.Youtube },
+                            new[] { YouTubeService.Scope.YoutubeReadonly },
                             USER_DB_ID,
                             CancellationToken.None,
                             SecureDataStore.Instance,
@@ -159,27 +159,25 @@ namespace MP3Player.Youtube
                     searchReq.Q = query;
                     searchReq.Type = "video";
                     searchReq.VideoCategoryId = "10";
-                    searchReq.MaxResults = 10;
+                    searchReq.MaxResults = 12;
                     searchReq.PageToken = nextPage;
                     searchReq.SafeSearch = SearchResource.ListRequest.SafeSearchEnum.None;
+                    searchReq.TopicId = "/m/04rlf";
 
                     if (relatedToVideoId != "") 
                         searchReq.RelatedToVideoId = relatedToVideoId;
 
-                    try
-                    {
-                        var searchResp = await searchReq.ExecuteAsync(token);
-                        nextPage = searchResp.NextPageToken;
-                        if (searchResp.Items.Count == 0) 
-                            return false;
+                    // Maybe test this?
+                    //searchReq.RelatedToVideoId = "QN1odfjtMoo%7CQbf8d-yC3yM";
 
-                        cache.AddRange(searchResp.Items);
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogException(e);
+                    Debug.Log("Made YouTube search API call");
+
+                    var searchResp = await searchReq.ExecuteAsync(token);
+                    nextPage = searchResp.NextPageToken;
+                    if (searchResp.Items.Count == 0)
                         return false;
-                    }
+
+                    cache.AddRange(searchResp.Items);
                 }
 
                 currentIndex++;

@@ -91,6 +91,9 @@ namespace MP3Player.Views
 
         public async UniTask Search(string query, CancellationToken token)
         {
+            //So we don't exceed quota
+            await UniTask.Delay(500, false, PlayerLoopTiming.Update, token);
+
             Debug.Log("Searching for " + query);
             searching = true;
             searchResults.Clear();
@@ -104,9 +107,11 @@ namespace MP3Player.Views
             searchSomethingView.SetActive(false);
             failedView.SetActive(false);
 
+
             await UniTask.SwitchToThreadPool();
             bool switchedToFakeSearch = false;
             searchEnumerator = new RealYoutube.SearchEnumerator(query, token);
+
             try
             {
                 //Search
@@ -207,7 +212,16 @@ namespace MP3Player.Views
             if (index > maxSeenIndex) maxSeenIndex = index;
 
             if (!searchResults.ContainsKey(index)) return;
+
             Track track = new(searchResults[index]);
+
+            ////Add related tracks
+            //foreach (var item in searchResults.Values)
+            //{
+            //    Track a = new(item);
+            //    a.Save();
+            //    track.AddRelatedTrack(a);
+            //}
 
             info.Populate(track);
 
@@ -260,31 +274,6 @@ namespace MP3Player.Views
 
             ScreenManager.Instance.ShowOther(optionsView, args);
         }
-
-        //private void OnLeftSwipe(Track track, TrackInfo info)
-        //{
-        //    //TODO replace with playlist editor
-        //    PlayerManager.AddToQueue(track);
-        //    info.RemoveLeftSwipeAction();
-        //}
-
-        //private void OnRightSwipe(Track track, TrackInfo info)
-        //{
-        //    info.SetStatusState(true);
-        //    info.RemoveRightSwipeAction();
-
-        //    //This is buggy, may set another track info under certain conditions
-        //    DownloadManager.OnDownloadComplete += (string id) =>
-        //    {
-        //        if (id == track.Id) info.SetStatusState(false);
-        //    };
-        //    DownloadManager.OnDownloadFailed += (string id) =>
-        //    {
-        //        if (id == track.Id) info.SetStatusState(false);
-        //    };
-
-        //    _ = DownloadManager.DownloadAsync(track);
-        //}
 
         private void OnClick(Track track, TrackListViewItem info)
         {

@@ -33,6 +33,8 @@ namespace MP3Player.Managers
             ApplicationChrome.navigationBarState = ApplicationChrome.States.Visible;
 
             DB.PreCacheInstance();
+
+            DB.Instance.GetCollection<Track>().EnsureIndex(x => x.Title);
         }
         void Start()
         {

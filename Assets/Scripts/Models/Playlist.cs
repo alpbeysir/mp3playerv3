@@ -64,6 +64,12 @@ namespace MP3Player.Models
             if (CurrentIndex >= Data.Count) CurrentIndex = Data.Count;
             _ = SaveAsync();
         }
+        
+        public void GotoRandom()
+        {
+            CurrentIndex = UnityEngine.Random.Range(0, Data.Count);
+            Save();
+        }
 
         public void Previous()
         {

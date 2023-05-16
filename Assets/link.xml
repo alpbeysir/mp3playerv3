@@ -11,4 +11,7 @@
   <assembly fullname="YoutubeExplode">
     <namespace fullname="YoutubeExplode.*" preserve="all" />
   </assembly>
+    <assembly fullname="Google.Apis.YouTube.v3">
+    <namespace fullname="Google.Apis.YouTube.v3.*" preserve="all" />
+  </assembly>
 </linker>

@@ -4455,8 +4455,10 @@ MonoBehaviour:
   searchBar: {fileID: 317506142}
   disableLoadThreshold: 6
   optionsView: {fileID: 1092059517}
+  maxRealYoutubeSearches: 12
   maxResults: 100
   curLoadedResults: 0
+  maxSeenIndex: 0
   searching: 0
 --- !u!114 &595446963
 MonoBehaviour:

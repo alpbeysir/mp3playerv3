@@ -11,6 +11,7 @@ using MP3Player.Models;
 using MP3Player.Misc;
 using MP3Player.Managers;
 using MP3Player.Youtube;
+using System.Collections.Generic;
 
 namespace MP3Player.Models
 {
@@ -65,8 +66,7 @@ namespace MP3Player.Models
 
         public bool AvailableOffline()
         {
-            string temp;
-            return TryGetExistingMedia(out temp);
+            return TryGetExistingMedia(out _);
         }
 
         public bool TryGetExistingMedia(out string path)
@@ -91,8 +91,7 @@ namespace MP3Player.Models
 
         public async Task<string> GetMediaUri(CancellationToken token = default)
         {
-            string path;
-            if (TryGetExistingMedia(out path))
+            if (TryGetExistingMedia(out string path))
             {
                 //Debug.Log(string.Format("Found existing media: {0}", path));
                 return path;

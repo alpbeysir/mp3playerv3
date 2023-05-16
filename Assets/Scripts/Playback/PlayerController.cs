@@ -58,7 +58,7 @@ namespace MP3Player.Playback
 
         public static async Task RequestTrackChange(TrackChangeDirection dir)
         {
-            await state.Move(dir);
+            await state.Move(dir, cts.Token);
 
             if (cts.IsCancellationRequested) return;
             cts.Cancel();

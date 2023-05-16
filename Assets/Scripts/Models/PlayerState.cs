@@ -2,7 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using UnityEngine;
+using MP3Player.Misc;
+using System.Diagnostics;
+using MP3Player.Youtube;
+using System.Threading;
+using YoutubeExplode.Search;
 
 namespace MP3Player.Models
 {
@@ -29,7 +33,7 @@ namespace MP3Player.Models
             _ = SaveAsync();
         }
 
-        public async Task Move(TrackChangeDirection dir)
+        public async Task Move(TrackChangeDirection dir, CancellationToken token)
         {
             if (dir == TrackChangeDirection.Previous)
             {
@@ -57,13 +61,50 @@ namespace MP3Player.Models
                     var track = pl.GetCurrent();
                     if (track == null)
                     {
-                        //TODO handle end of playlist (switch to recommendations) for now just restart playlist
-                        Debug.Log("Reached playlist end");
-                        pl.ResetPosition();
-                        CurrentTrackId = pl.GetCurrent().Id;
+                        var playlists = DB.Instance.GetCollection<Playlist>().FindAll();
+                        SetPlaylist(playlists.RandomElement().Id);
+                        var newPlaylist = Playlist.Get(CurrentPlaylistId);
+                        newPlaylist.GotoRandom();
+                        CurrentTrackId = newPlaylist.GetCurrent().Id;
+                        newPlaylist.Next();
+                        //var relatedSearch = new RealYoutube.SearchEnumerator(string.Empty, token, PlayerController.Current.Id); 
+                        //VideoSearchResult relatedResult = null;
+                        //try
+                        //{
+                        //    int randomMoveAmount = UnityEngine.Random.Range(1, 20);
+                            
+                        //    while (randomMoveAmount > 0)
+                        //    {
+                        //        await relatedSearch.MoveNextAsync();
+                        //        relatedResult = relatedSearch.Current as VideoSearchResult;
+                        //        randomMoveAmount--;
+                        //    }
+                        //}
+                        //finally
+                        //{
+                        //    if (relatedResult != null)
+                        //    { 
+                        //        var relatedTrack = new Track(relatedResult);
+                        //        relatedTrack.Save();
+                        //        PlayQueue.Insert(0, relatedTrack.Id);
+                        //        await Move(TrackChangeDirection.Next, token);
+                        //    }
+                        //    else
+                        //    {
+                        //        var tracks = DB.Instance.GetCollection<Playlist>().FindAll();
+                        //        SetPlaylist(tracks.RandomElement().Id);
+                        //        var newPlaylist = await Playlist.GetAsync(CurrentPlaylistId);
+                        //        newPlaylist.GotoRandom();
+                        //        CurrentTrackId = pl.GetCurrent().Id;
+                        //        newPlaylist.Next();
+                        //    }
+                        //}            
                     }
-                    pl.Next();
-                    CurrentTrackId = track.Id;
+                    else
+                    {
+                        pl.Next();
+                        CurrentTrackId = track.Id;
+                    }
                 }
             }
 
