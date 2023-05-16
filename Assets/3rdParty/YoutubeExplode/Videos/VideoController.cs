@@ -3,130 +3,143 @@ using System.Threading;
 using System.Threading.Tasks;
 using YoutubeExplode.Bridge;
 using YoutubeExplode.Exceptions;
-using YoutubeExplode.Utils;
 
 namespace YoutubeExplode.Videos
 {
-    internal class VideoController : YoutubeControllerBase
+    internal class VideoController
     {
-        public VideoController(HttpClient http)
-            : base(http)
-        {
-        }
+        protected HttpClient Http { get; }
 
-        public async ValueTask<VideoWatchPageExtractor> GetVideoWatchPageAsync(
+        public VideoController(HttpClient http) => Http = http;
+
+        public async ValueTask<VideoWatchPage> GetVideoWatchPageAsync(
             VideoId videoId,
             CancellationToken cancellationToken = default)
         {
-            var url = $"https://www.youtube.com/watch?v={videoId}&bpctr=9999999999&hl=en";
-
-            for (var retry = 0; retry <= 5; retry++)
+            for (var retriesRemaining = 5; ; retriesRemaining--)
             {
-                var raw = await SendHttpRequestAsync(url, cancellationToken);
+                var watchPage = VideoWatchPage.TryParse(
+                    await Http.GetStringAsync(
+                        $"https://www.youtube.com/watch?v={videoId}&bpctr=9999999999",
+                        cancellationToken
+                    )
+                );
 
-                var watchPage = VideoWatchPageExtractor.TryCreate(raw);
-                if (watchPage is not null)
+                if (watchPage is null)
                 {
-                    if (!watchPage.IsVideoAvailable())
-                    {
-                        throw new VideoUnavailableException($"Video '{videoId}' is not available.");
-                    }
+                    if (retriesRemaining > 0)
+                        continue;
 
-                    return watchPage;
+                    throw new YoutubeExplodeException(
+                        "Video watch page is broken. " +
+                        "Please try again in a few minutes."
+                    );
                 }
-            }
 
-            throw new YoutubeExplodeException(
-                "Video watch page is broken. " +
-                "Please try again in a few minutes."
-            );
+                if (!watchPage.IsAvailable)
+                    throw new VideoUnavailableException($"Video '{videoId}' is not available.");
+
+                return watchPage;
+            }
         }
 
-        public async ValueTask<PlayerResponseExtractor> GetPlayerResponseAsync(
+        public async ValueTask<PlayerResponse> GetPlayerResponseAsync(
             VideoId videoId,
             CancellationToken cancellationToken = default)
         {
-            string url = $"https://www.youtube.com/youtubei/v1/player?key={ApiKey}";
-
-            using var request = new HttpRequestMessage(HttpMethod.Post, url)
+            // The most optimal client to impersonate is the Android client, because
+            // it doesn't require signature deciphering (for both normal and n-parameter signatures).
+            // However, the regular Android client has a limitation, preventing it from downloading
+            // multiple streams from the same manifest (or the same stream multiple times).
+            // As a workaround, we're using ANDROID_TESTSUITE which appears to offer the same
+            // functionality, but doesn't impose the aforementioned limitation.
+            // https://github.com/Tyrrrz/YoutubeExplode/issues/705
+            using var request = new HttpRequestMessage(HttpMethod.Post, "https://www.youtube.com/youtubei/v1/player")
             {
-                Content = Json.SerializeToHttpContent(new
+                Content = new StringContent(
+                    $$"""
                 {
-                    videoId = videoId.Value,
-                    contentCheckOk = true,
-                    racyCheckOk = true,
-                    context = new
-                    {
-                        client = new
-                        {
-                            clientName = "ANDROID",
-                            clientVersion = "17.29.35",
-                            androidSdkVersion = 30,
-                            hl = "en",
-                            gl = "US",
-                            utcOffsetMinutes = 0
+                    "videoId": "{{videoId}}",
+                    "context": {
+                        "client": {
+                            "clientName": "ANDROID_TESTSUITE",
+                            "clientVersion": "1.9",
+                            "androidSdkVersion": 30,
+                            "hl": "en",
+                            "gl": "US",
+                            "utcOffsetMinutes": 0
                         }
                     }
-                })
+                }
+                """
+                )
             };
 
-            var raw = await SendHttpRequestAsync(request, cancellationToken);
-            var playerResponse = PlayerResponseExtractor.Create(raw);
+            // User agent appears to be sometimes required when impersonating Android
+            // https://github.com/iv-org/invidious/issues/3230#issuecomment-1226887639
+            request.Headers.Add(
+                "User-Agent",
+                "com.google.android.youtube/17.36.4 (Linux; U; Android 12; GB) gzip"
+            );
 
-            if (!playerResponse.IsVideoAvailable())
-            {
+            using var response = await Http.SendAsync(request, cancellationToken);
+            response.EnsureSuccessStatusCode();
+
+            var playerResponse = PlayerResponse.Parse(
+                await response.Content.ReadAsStringAsync(cancellationToken)
+            );
+
+            if (!playerResponse.IsAvailable)
                 throw new VideoUnavailableException($"Video '{videoId}' is not available.");
-            }
 
             return playerResponse;
         }
 
-        public async ValueTask<PlayerResponseExtractor> GetPlayerResponseAsync(
+        public async ValueTask<PlayerResponse> GetPlayerResponseAsync(
             VideoId videoId,
-            string signatureTimestamp,
+            string? signatureTimestamp,
             CancellationToken cancellationToken = default)
         {
-            string url = $"https://www.youtube.com/youtubei/v1/player?key={ApiKey}";
-
-            using var request = new HttpRequestMessage(HttpMethod.Post, url)
+            // The only client that can handle age-restricted videos without authentication is the
+            // TVHTML5_SIMPLY_EMBEDDED_PLAYER client.
+            // This client does require signature deciphering, so we only use it as a fallback.
+            using var request = new HttpRequestMessage(HttpMethod.Post, "https://www.youtube.com/youtubei/v1/player")
             {
-                Content = Json.SerializeToHttpContent(new
+                Content = new StringContent(
+                    $$"""
                 {
-                    videoId = videoId.Value,
-                    contentCheckOk = true,
-                    racyCheckOk = true,
-                    context = new
-                    {
-                        client = new
-                        {
-                            clientName = "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
-                            clientVersion = "2.0",
-                            hl = "en",
-                            gl = "US",
-                            utcOffsetMinutes = 0
+                    "videoId": "{{videoId}}",
+                    "context": {
+                        "client": {
+                            "clientName": "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
+                            "clientVersion": "2.0",
+                            "hl": "en",
+                            "gl": "US",
+                            "utcOffsetMinutes": 0
                         },
-                        thirdParty = new
-                        {
-                            embedUrl = "https://www.youtube.com"
+                        "thirdParty": {
+                            "embedUrl": "https://www.youtube.com"
                         }
                     },
-                    playbackContext = new
-                    {
-                        contentPlaybackContext = new
-                        {
-                            signatureTimestamp
+                    "playbackContext": {
+                        "contentPlaybackContext": {
+                            "signatureTimestamp": "{{signatureTimestamp ?? "19369"}}"
                         }
                     }
-                })
+                }
+                """
+                )
             };
 
-            var raw = await SendHttpRequestAsync(request, cancellationToken);
-            var playerResponse = PlayerResponseExtractor.Create(raw);
+            using var response = await Http.SendAsync(request, cancellationToken);
+            response.EnsureSuccessStatusCode();
 
-            if (!playerResponse.IsVideoAvailable())
-            {
+            var playerResponse = PlayerResponse.Parse(
+                await response.Content.ReadAsStringAsync(cancellationToken)
+            );
+
+            if (!playerResponse.IsAvailable)
                 throw new VideoUnavailableException($"Video '{videoId}' is not available.");
-            }
 
             return playerResponse;
         }

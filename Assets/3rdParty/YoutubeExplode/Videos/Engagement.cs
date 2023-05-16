@@ -21,7 +21,7 @@ namespace YoutubeExplode.Videos
         /// Dislike count.
         /// </summary>
         /// <remarks>
-        /// YouTube no longer supports dislikes, so this value is always 0.
+        /// YouTube no longer shows dislikes, so this value is always 0.
         /// </remarks>
         public long DislikeCount { get; }
 
@@ -29,7 +29,7 @@ namespace YoutubeExplode.Videos
         /// Average rating.
         /// </summary>
         /// <remarks>
-        /// YouTube no longer supports dislikes, so this value is always 5.
+        /// YouTube no longer shows dislikes, so this value is always 5.
         /// </remarks>
         public double AverageRating => LikeCount + DislikeCount != 0
             ? 1 + 4.0 * LikeCount / (LikeCount + DislikeCount)

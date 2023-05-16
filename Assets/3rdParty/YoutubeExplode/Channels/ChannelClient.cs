@@ -29,18 +29,18 @@ namespace YoutubeExplode.Channels
             _controller = new ChannelController(http);
         }
 
-        private Channel Extract(ChannelPageExtractor channelPage)
+        private Channel Get(ChannelPage channelPage)
         {
             var channelId =
-                channelPage.TryGetChannelId() ??
+                channelPage.Id ??
                 throw new YoutubeExplodeException("Could not extract channel ID.");
 
             var title =
-                channelPage.TryGetChannelTitle() ??
+                channelPage.Title ??
                 throw new YoutubeExplodeException("Could not extract channel title.");
 
             var logoUrl =
-                channelPage.TryGetChannelLogoUrl() ??
+                channelPage.LogoUrl ??
                 throw new YoutubeExplodeException("Could not extract channel logo URL.");
 
             var logoSize = Regex
@@ -52,7 +52,10 @@ namespace YoutubeExplode.Channels
                 .NullIfWhiteSpace()?
                 .ParseIntOrNull() ?? 100;
 
-            var thumbnails = new[] { new Thumbnail(logoUrl, new Resolution(logoSize, logoSize)) };
+            var thumbnails = new[]
+            {
+            new Thumbnail(logoUrl, new Resolution(logoSize, logoSize))
+        };
 
             return new Channel(channelId, title, thumbnails);
         }
@@ -63,7 +66,7 @@ namespace YoutubeExplode.Channels
         public async ValueTask<Channel> GetAsync(
             ChannelId channelId,
             CancellationToken cancellationToken = default) =>
-            Extract(await _controller.GetChannelPageAsync(channelId, cancellationToken));
+            Get(await _controller.GetChannelPageAsync(channelId, cancellationToken));
 
         /// <summary>
         /// Gets the metadata associated with the channel of the specified user.
@@ -71,23 +74,23 @@ namespace YoutubeExplode.Channels
         public async ValueTask<Channel> GetByUserAsync(
             UserName userName,
             CancellationToken cancellationToken = default) =>
-            Extract(await _controller.GetChannelPageAsync(userName, cancellationToken));
+            Get(await _controller.GetChannelPageAsync(userName, cancellationToken));
 
         /// <summary>
-        /// Gets the metadata associated with the channel identified by the specified slug or custom URL.
+        /// Gets the metadata associated with the channel identified by the specified slug or legacy custom URL.
         /// </summary>
         public async ValueTask<Channel> GetBySlugAsync(
             ChannelSlug channelSlug,
             CancellationToken cancellationToken = default) =>
-            Extract(await _controller.GetChannelPageAsync(channelSlug, cancellationToken));
+            Get(await _controller.GetChannelPageAsync(channelSlug, cancellationToken));
 
         /// <summary>
-        /// Gets the metadata associated with the channel identified by the specified handle or handle URL.
+        /// Gets the metadata associated with the channel identified by the specified handle or custom URL.
         /// </summary>
         public async ValueTask<Channel> GetByHandleAsync(
             ChannelHandle channelHandle,
             CancellationToken cancellationToken = default) =>
-            Extract(await _controller.GetChannelPageAsync(channelHandle, cancellationToken));
+            Get(await _controller.GetChannelPageAsync(channelHandle, cancellationToken));
 
         /// <summary>
         /// Enumerates videos uploaded by the specified channel.
@@ -97,7 +100,7 @@ namespace YoutubeExplode.Channels
             ChannelId channelId,
             CancellationToken cancellationToken = default)
         {
-            // Replace 'UC' in channel ID with 'UU'
+            // Replace 'UC' in the channel ID with 'UU'
             var playlistId = "UU" + channelId.Value[2..];
             return new PlaylistClient(_http).GetVideosAsync(playlistId, cancellationToken);
         }

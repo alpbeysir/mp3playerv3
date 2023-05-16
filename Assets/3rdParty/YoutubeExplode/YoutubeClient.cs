@@ -37,10 +37,12 @@ namespace YoutubeExplode
         /// </summary>
         public YoutubeClient(HttpClient http)
         {
-            Videos = new VideoClient(http);
-            Playlists = new PlaylistClient(http);
-            Channels = new ChannelClient(http);
-            Search = new SearchClient(http);
+            var youtubeHttp = new HttpClient(new YoutubeHttpMessageHandler(http), true);
+
+            Videos = new VideoClient(youtubeHttp);
+            Playlists = new PlaylistClient(youtubeHttp);
+            Channels = new ChannelClient(youtubeHttp);
+            Search = new SearchClient(youtubeHttp);
         }
 
         /// <summary>

@@ -69,9 +69,7 @@ namespace YoutubeExplode.Utils.Extensions
                 .SelectMany(j => j.EnumerateDescendantProperties(propertyName));
 
             foreach (var deepDescendant in deepArrayDescendants)
-            {
                 yield return deepDescendant;
-            }
 
             // Recursively check on all object children (if current element is an object)
             var deepObjectDescendants = element
@@ -79,9 +77,7 @@ namespace YoutubeExplode.Utils.Extensions
                 .SelectMany(j => j.Value.EnumerateDescendantProperties(propertyName));
 
             foreach (var deepDescendant in deepObjectDescendants)
-            {
                 yield return deepDescendant;
-            }
         }
     }
 }

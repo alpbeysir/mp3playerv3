@@ -1,4 +1,3 @@
-using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 
@@ -42,8 +41,8 @@ namespace YoutubeExplode.Utils
 
         public static JsonElement Parse(string source)
         {
-            using var doc = JsonDocument.Parse(source);
-            return doc.RootElement.Clone();
+            using var document = JsonDocument.Parse(source);
+            return document.RootElement.Clone();
         }
 
         public static JsonElement? TryParse(string source)
@@ -57,11 +56,5 @@ namespace YoutubeExplode.Utils
                 return null;
             }
         }
-
-        public static HttpContent SerializeToHttpContent<T>(T obj) => new StringContent(
-            JsonSerializer.Serialize(obj),
-            Encoding.UTF8,
-            "application/json"
-        );
     }
 }
