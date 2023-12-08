@@ -46,6 +46,14 @@ namespace MP3Player.Managers
             if (track.AvailableOffline() && PlayerController.Current.Id != track.Id) File.Delete(track.GetMediaUri().Result);
         }
 
+        private static void PurgeTempFiles()
+        {
+            foreach(var tempFile in Directory.EnumerateFiles(Utils.MediaPath, "*.tmp"))
+            {
+                File.Delete(tempFile);
+            }
+        }
+
         public static async Task DownloadAsync(Track track)
         {
             string id = track.Id;
@@ -79,14 +87,18 @@ namespace MP3Player.Managers
                 timer.Start();
 
                 IStreamInfo streamInfo = await track.GetAudioOnlyStreamInfoAsync(download.cts.Token);
-                var path = Utils.MediaPath + string.Format("{0}.{1}", id, streamInfo.Container.Name);
-                Utils.CreateDirFromPath(path);
-                await FakeYoutube.Instance.Videos.Streams.DownloadAsync(streamInfo, path, download.p, download.cts.Token);
+                var finalPath = $"{Utils.MediaPath}{id}.{streamInfo.Container.Name}";
+                var tempPath =  $"{finalPath}.tmp";
+
+                Utils.CreateDirFromPath(tempPath);
+                await FakeYoutube.Instance.Videos.Streams.DownloadAsync(streamInfo, tempPath, download.p, download.cts.Token);
 
                 download.cts.Token.ThrowIfCancellationRequested();
 
                 _ = TextureManager.Texture2DFromUrlAsync(track.LowResThumbnailUrl);
                 _ = TextureManager.Texture2DFromUrlAsync(track.HighResThumbnailUrl);
+
+                File.Move(tempPath, finalPath);
 
                 timer.Stop();
                 Debug.Log("Download of " + id + " complete, took " + timer.Elapsed.TotalSeconds + "s");
@@ -98,12 +110,13 @@ namespace MP3Player.Managers
                     Debug.LogException(e);
                     OnDownloadFailed.Invoke(id);
                 }
-                Delete(track);
+
             }
             finally
             {
                 downloads.Remove(id);
                 OnDownloadComplete.Invoke(id);
+                PurgeTempFiles();
 
                 if (dlQueue.TryDequeue(out Track t)) _ = DownloadAsync(t);
             }
